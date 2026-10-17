@@ -2,6 +2,9 @@
 
 **Your Work. Your Rights. Your Saathi.**
 
+**Live demo:** https://kaamsaathi-ai.vercel.app — sign in with the prefilled demo account
+(`demo@workwise.ai` / `WorkerDemo@2026`; fictional data, public credentials).
+
 A multilingual GenAI assistant for gig and informal workers in India — delivery partners, cab/auto/bike-taxi
 drivers, construction and daily-wage workers, domestic workers. It helps workers track earnings, understand
 their rights and safety options, discover potentially relevant welfare schemes, prepare documents, and draft
