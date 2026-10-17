@@ -16,7 +16,7 @@ export default defineConfig({
       command: 'npm run dev -w backend',
       cwd: '..',
       url: 'http://localhost:4100/api/v1/health',
-      env: { PORT: '4100', FRONTEND_ORIGINS: 'http://localhost:3100', ANTHROPIC_API_KEY: '', MONGODB_URI: '', AI_RATE_LIMIT: '1000', GENERAL_RATE_LIMIT: '5000', NODE_ENV: 'development' },
+      env: { PORT: '4100', FRONTEND_ORIGINS: 'http://localhost:3100', ANTHROPIC_API_KEY: '', MONGODB_URI: '', AI_RATE_LIMIT: '1000', GENERAL_RATE_LIMIT: '5000', LOGIN_RATE_LIMIT: '1000', AUTH_RATE_LIMIT: '1000', REGISTER_RATE_LIMIT: '1000', DEMO_ACCOUNT_ENABLED: 'true', NODE_ENV: 'development' },
       reuseExistingServer: false,
       timeout: 60_000,
     },

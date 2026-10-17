@@ -1,47 +1,64 @@
+import MongoStore from 'connect-mongo';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createApp } from '../../src/app.js';
-import { MockAIProvider } from '../../src/ai/mockProvider.js';
-import { loadConfig } from '../../src/config/env.js';
-import { loadKnowledge } from '../../src/knowledge/loader.js';
-import { KnowledgeRetrievalService } from '../../src/knowledge/retrieval.js';
 import { EarningsEntryModel } from '../../src/models/earningsEntry.js';
+import { UserModel } from '../../src/models/user.js';
 import { createMongoRepositories } from '../../src/repositories/mongo.js';
 import type { Repositories } from '../../src/repositories/types.js';
-import { DEMO_RETENTION_MS, GUEST_RETENTION_MS } from '../../src/utils/retention.js';
-import { H, entry } from '../helpers/app.js';
+import { seedDemoUser } from '../../src/services/authService.js';
+import type { AppContext } from '../../src/services/context.js';
+import { DEMO_RETENTION_MS } from '../../src/utils/retention.js';
+import { H, demoAgent, entry, makeContext, userAgent } from '../helpers/app.js';
 
 /**
- * Same API, real MongoDB (an ephemeral mongod downloaded by mongodb-memory-server). Proves the
- * production repository enforces ownership and resists operator injection, not just the memory one.
+ * Same API, real MongoDB (an ephemeral mongod downloaded by mongodb-memory-server), with sessions
+ * stored in Mongo through connect-mongo exactly as in production.
  */
 let mongod: MongoMemoryServer;
 let repos: Repositories;
+let ctx: AppContext;
 let app: ReturnType<typeof createApp>;
 
 beforeAll(async () => {
   mongod = await MongoMemoryServer.create();
   repos = await createMongoRepositories(mongod.getUri('kaamsaathi_test'));
-  await EarningsEntryModel.syncIndexes();
-  const config = loadConfig({ NODE_ENV: 'test', SESSION_SECRET: 'x'.repeat(40) });
-  app = createApp({
-    config,
-    provider: new MockAIProvider(),
-    repos,
-    knowledge: new KnowledgeRetrievalService(loadKnowledge()),
-  });
+  await Promise.all([EarningsEntryModel.syncIndexes(), UserModel.syncIndexes()]);
+  ctx = makeContext({ repos });
+  ctx.sessionStore = MongoStore.create({ client: repos.client!(), collectionName: 'sessions' });
+  await seedDemoUser(ctx);
+  app = createApp(ctx);
 }, 120_000);
 
 afterAll(async () => {
+  await (ctx?.sessionStore as MongoStore | undefined)?.close();
   await repos?.close?.();
   await mongod?.stop();
 });
 
 describe('MongoDB repository', () => {
+  it('demo seeding is idempotent against a real unique index', async () => {
+    const again = await seedDemoUser(ctx);
+    await Promise.all([seedDemoUser(ctx), seedDemoUser(ctx)]); // concurrent re-runs
+    expect(again?.created).toBe(false);
+    expect(await UserModel.countDocuments({ email: 'demo@workwise.ai' })).toBe(1);
+    const doc = await UserModel.findOne({ email: 'demo@workwise.ai' }).lean();
+    expect(doc?.role).toBe('demo');
+    expect(doc?.passwordHash).toMatch(/^\$argon2id\$/);
+  });
+
+  it('stores sessions server-side in MongoDB and deletes them on logout', async () => {
+    const a = await demoAgent(app);
+    const sessions = repos.client!().db().collection('sessions');
+    const before = await sessions.countDocuments();
+    expect(before).toBeGreaterThan(0);
+    await a.post('/api/v1/auth/logout').set(H);
+    expect(await sessions.countDocuments()).toBe(before - 1);
+  });
+
   it('creates entries, computes the summary and enforces cross-user isolation', async () => {
-    const alice = request.agent(app);
-    const bob = request.agent(app);
+    const alice = await userAgent(app);
+    const bob = await userAgent(app);
 
     const created = await alice.post('/api/v1/earnings/entries').set(H).send(entry());
     expect(created.status).toBe(201);
@@ -61,7 +78,7 @@ describe('MongoDB repository', () => {
   });
 
   it('rejects NoSQL operator injection in ids and bodies', async () => {
-    const eve = request.agent(app);
+    const eve = await userAgent(app);
     expect((await eve.delete('/api/v1/earnings/entries/%7B%22$ne%22:null%7D').set(H)).status).toBe(
       400,
     );
@@ -72,30 +89,25 @@ describe('MongoDB repository', () => {
     expect(r.status).toBe(400);
   });
 
-  it('sets the retention expiry (TTL) per bucket and hides it from the API', async () => {
-    const guest = request.agent(app);
-    const res = await guest.post('/api/v1/earnings/entries').set(H).send(entry());
+  it('expires demo-sandbox data (TTL) but never adds an expiry to account data', async () => {
+    const worker = await userAgent(app);
+    const res = await worker.post('/api/v1/earnings/entries').set(H).send(entry());
     expect(res.body.entry.expiresAt).toBeUndefined();
+    await worker.patch(`/api/v1/earnings/entries/${res.body.entry.id}`).set(H).send({ tips: 5 });
     const doc = await EarningsEntryModel.findById(res.body.entry.id).lean();
-    const ttl = doc!.expiresAt.getTime() - Date.now();
-    expect(ttl).toBeGreaterThan(GUEST_RETENTION_MS - 60_000);
-    expect(ttl).toBeLessThanOrEqual(GUEST_RETENTION_MS);
+    expect(doc!.expiresAt).toBeUndefined(); // kept until the worker deletes it
 
-    const demo = request.agent(app);
-    const d = await demo
-      .post('/api/v1/earnings/entries')
-      .set(H)
-      .set('X-KS-Mode', 'demo')
-      .send(entry());
+    const demo = await demoAgent(app);
+    const d = await demo.post('/api/v1/earnings/entries').set(H).send(entry());
     const demoDoc = await EarningsEntryModel.findById(d.body.entry.id).lean();
-    expect(demoDoc!.expiresAt.getTime() - Date.now()).toBeLessThanOrEqual(DEMO_RETENTION_MS);
+    expect(demoDoc!.expiresAt!.getTime() - Date.now()).toBeLessThanOrEqual(DEMO_RETENTION_MS);
 
     const indexes = await EarningsEntryModel.collection.indexes();
     expect(indexes.some((i) => i.key.expiresAt === 1 && i.expireAfterSeconds === 0)).toBe(true);
   });
 
   it('stores complaints only with consent and deletes all my data on request', async () => {
-    const w = request.agent(app);
+    const w = await userAgent(app);
     const facts = {
       type: 'unpaid_incentive',
       platformOrEmployer: 'TestPlat',

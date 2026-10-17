@@ -1,6 +1,12 @@
 import { randomUUID } from 'node:crypto';
-import type { EarningsEntry, GrievanceRecord } from '../types/domain.js';
-import type { EarningsRepository, GrievanceRepository, Repositories } from './types.js';
+import type { EarningsEntry, GrievanceRecord, UserRecord } from '../types/domain.js';
+import type {
+  EarningsRepository,
+  GrievanceRepository,
+  Repositories,
+  ResetTokenRepository,
+  UserRepository,
+} from './types.js';
 
 /** Dev/demo/test store. Data is lost on restart, which is also a privacy feature for demos. */
 export function createMemoryRepositories(): Repositories {
@@ -103,5 +109,52 @@ export function createMemoryRepositories(): Repositories {
     },
   };
 
-  return { earnings, grievances, kind: 'memory' };
+  const userStore = new Map<string, UserRecord>();
+  const users: UserRepository = {
+    async findByEmail(email) {
+      return [...userStore.values()].find((u) => u.email === email) ?? null;
+    },
+    async findById(id) {
+      return userStore.get(id) ?? null;
+    },
+    async create(data) {
+      if (await users.findByEmail(data.email)) return null;
+      const user: UserRecord = { ...data, id: randomUUID(), sessionVersion: 0, createdAt: now() };
+      userStore.set(user.id, user);
+      return { ...user };
+    },
+    async setPassword(id, passwordHash) {
+      const u = userStore.get(id);
+      if (u) userStore.set(id, { ...u, passwordHash, sessionVersion: u.sessionVersion + 1 });
+    },
+    async upsertDemo(data) {
+      const existing = await users.findByEmail(data.email);
+      if (!existing) {
+        const user = (await users.create({ ...data, role: 'demo' }))!;
+        return { user, created: true };
+      }
+      const user = { ...existing, ...data, role: 'demo' as const };
+      userStore.set(user.id, user);
+      return { user: { ...user }, created: false };
+    },
+    async count() {
+      return userStore.size;
+    },
+  };
+
+  const tokenStore = new Map<string, { userId: string; expiresAt: Date; usedAt?: Date }>();
+  const resetTokens: ResetTokenRepository = {
+    async create(userId, tokenHash, expiresAt) {
+      for (const [h, t] of tokenStore) if (t.userId === userId && !t.usedAt) tokenStore.delete(h);
+      tokenStore.set(tokenHash, { userId, expiresAt });
+    },
+    async consume(tokenHash, at = new Date()) {
+      const t = tokenStore.get(tokenHash);
+      if (!t || t.usedAt || t.expiresAt <= at) return null;
+      t.usedAt = at;
+      return t.userId;
+    },
+  };
+
+  return { earnings, grievances, users, resetTokens, kind: 'memory' };
 }

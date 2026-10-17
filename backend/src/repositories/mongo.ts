@@ -1,8 +1,10 @@
 import mongoose, { isValidObjectId } from 'mongoose';
-import type { EarningsEntry, GrievanceRecord } from '../types/domain.js';
+import type { EarningsEntry, GrievanceRecord, UserRecord } from '../types/domain.js';
 import { EarningsEntryModel } from '../models/earningsEntry.js';
 import { GrievanceDraftModel } from '../models/grievanceDraft.js';
-import { expiresAtFor } from '../utils/retention.js';
+import { PasswordResetTokenModel } from '../models/passwordResetToken.js';
+import { UserModel } from '../models/user.js';
+import { expirySet } from '../utils/retention.js';
 import type { Repositories } from './types.js';
 
 type Lean = Record<string, unknown> & { _id: unknown; createdAt: Date; updatedAt: Date };
@@ -33,6 +35,18 @@ const toGrievance = (d: Lean): GrievanceRecord => ({
   updatedAt: d.updatedAt.toISOString(),
 });
 
+const toUser = (d: Lean): UserRecord => ({
+  id: String(d._id),
+  email: d.email as string,
+  name: d.name as string,
+  passwordHash: d.passwordHash as string,
+  role: d.role as UserRecord['role'],
+  sessionVersion: d.sessionVersion as number,
+  createdAt: d.createdAt.toISOString(),
+});
+
+const isDuplicateKey = (e: unknown) => (e as { code?: number })?.code === 11000;
+
 /**
  * ids arrive as validated strings; isValidObjectId blocks operator objects ({ $ne: ... }) and
  * every filter uses explicit $eq on the server-derived ownerId.
@@ -44,6 +58,77 @@ export async function createMongoRepositories(uri: string): Promise<Repositories
   return {
     kind: 'mongo',
     close: () => mongoose.disconnect(),
+    client: () => mongoose.connection.getClient(),
+    users: {
+      async findByEmail(email) {
+        const d = await UserModel.findOne({ email: { $eq: email } }).lean();
+        return d ? toUser(d as unknown as Lean) : null;
+      },
+      async findById(id) {
+        if (!isValidObjectId(id)) return null;
+        const d = await UserModel.findById(id).lean();
+        return d ? toUser(d as unknown as Lean) : null;
+      },
+      async create(data) {
+        try {
+          const d = await UserModel.create(data);
+          return toUser(d.toObject() as unknown as Lean);
+        } catch (e) {
+          if (isDuplicateKey(e)) return null;
+          throw e;
+        }
+      },
+      async setPassword(id, passwordHash) {
+        if (!isValidObjectId(id)) return;
+        await UserModel.updateOne(
+          { _id: { $eq: id } },
+          { $set: { passwordHash }, $inc: { sessionVersion: 1 } },
+        );
+      },
+      async upsertDemo(data) {
+        const set = { name: data.name, passwordHash: data.passwordHash, role: 'demo' as const };
+        const update = () =>
+          UserModel.findOneAndUpdate(
+            { email: { $eq: data.email } },
+            { $set: set },
+            { returnDocument: 'after' },
+          ).lean();
+        const existing = await update();
+        if (existing) return { user: toUser(existing as unknown as Lean), created: false };
+        try {
+          const d = await UserModel.create({ email: data.email, ...set });
+          return { user: toUser(d.toObject() as unknown as Lean), created: true };
+        } catch (e) {
+          // A concurrent seed won the race; the unique index kept it to one account.
+          if (!isDuplicateKey(e)) throw e;
+          return { user: toUser((await update()) as unknown as Lean), created: false };
+        }
+      },
+      async count() {
+        return UserModel.countDocuments();
+      },
+    },
+    resetTokens: {
+      async create(userId, tokenHash, expiresAt) {
+        // Server-written operators: trusted() keeps sanitizeFilter from neutralising $exists.
+        await PasswordResetTokenModel.deleteMany(
+          mongoose.trusted({ userId: { $eq: String(userId) }, usedAt: { $exists: false } }),
+        );
+        await PasswordResetTokenModel.create({ userId, tokenHash, expiresAt });
+      },
+      async consume(tokenHash, at = new Date()) {
+        // One atomic update: two concurrent requests with the same token cannot both succeed.
+        const d = await PasswordResetTokenModel.findOneAndUpdate(
+          mongoose.trusted({
+            tokenHash: { $eq: String(tokenHash) },
+            usedAt: { $exists: false },
+            expiresAt: { $gt: at },
+          }),
+          { $set: { usedAt: at } },
+        ).lean();
+        return d ? String(d.userId) : null;
+      },
+    },
     earnings: {
       async list(ownerId, range) {
         const filter: Record<string, unknown> = { ownerId: { $eq: ownerId } };
@@ -63,7 +148,7 @@ export async function createMongoRepositories(uri: string): Promise<Repositories
           ...input,
           ownerId,
           source,
-          expiresAt: expiresAtFor(ownerId),
+          ...expirySet(ownerId),
         });
         return toEarnings(doc.toObject() as unknown as Lean);
       },
@@ -71,8 +156,8 @@ export async function createMongoRepositories(uri: string): Promise<Repositories
         if (!isValidObjectId(id)) return null;
         const doc = await EarningsEntryModel.findOneAndUpdate(
           { _id: { $eq: id }, ownerId: { $eq: ownerId } },
-          { $set: { ...patch, expiresAt: expiresAtFor(ownerId) } },
-          { new: true, runValidators: true },
+          { $set: { ...patch, ...expirySet(ownerId) } },
+          { returnDocument: 'after', runValidators: true },
         ).lean();
         return doc ? toEarnings(doc as unknown as Lean) : null;
       },
@@ -93,7 +178,7 @@ export async function createMongoRepositories(uri: string): Promise<Repositories
         const doc = await GrievanceDraftModel.create({
           ...data,
           ownerId,
-          expiresAt: expiresAtFor(ownerId),
+          ...expirySet(ownerId),
         });
         return toGrievance(doc.toObject() as unknown as Lean);
       },
@@ -105,14 +190,14 @@ export async function createMongoRepositories(uri: string): Promise<Repositories
       },
       async update(ownerId, id, patch) {
         if (!isValidObjectId(id)) return null;
-        const set: Record<string, unknown> = { expiresAt: expiresAtFor(ownerId) };
+        const set: Record<string, unknown> = { ...expirySet(ownerId) };
         if (patch.status) set.status = patch.status;
         if (patch.subject) set['draft.subject'] = patch.subject;
         if (patch.finalMessage) set['draft.finalMessage'] = patch.finalMessage;
         const doc = await GrievanceDraftModel.findOneAndUpdate(
           { _id: { $eq: id }, ownerId: { $eq: ownerId } },
           { $set: set },
-          { new: true },
+          { returnDocument: 'after' },
         ).lean();
         return doc ? toGrievance(doc as unknown as Lean) : null;
       },

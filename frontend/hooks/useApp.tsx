@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 import { tr } from '@/lib/i18n';
 import type { Lang, WorkCategory } from '@/lib/types';
 
@@ -23,8 +24,9 @@ interface Ctx {
   profile: Profile;
   setProfile: (p: Partial<Profile>) => void;
   t: (k: string) => string;
+  /** Whether the signed-in account is the shared demo account (from the server). */
   mode: 'demo' | 'real';
-  setMode: (m: 'demo' | 'real') => void;
+  /** Profile hydrated and a server-confirmed session exists: safe to load private data. */
   ready: boolean;
 }
 const DEFAULT: Profile = { language: 'en', largeText: false, highContrast: false };
@@ -48,15 +50,16 @@ function write(key: string, v: unknown) {
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [profile, setProfileState] = useState<Profile>(DEFAULT);
-  const [mode, setModeState] = useState<'demo' | 'real'>('demo');
-  const [ready, setReady] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
+  const { status, user } = useAuth();
+  const mode: 'demo' | 'real' = user?.isDemo ? 'demo' : 'real';
+  const ready = hydrated && status === 'authenticated';
 
   useEffect(() => {
     // Hydrate from localStorage after mount so server and client markup match on first paint.
     /* eslint-disable react-hooks/set-state-in-effect */
     setProfileState({ ...DEFAULT, ...read<Partial<Profile>>('ks_profile', {}) });
-    setModeState(read<string>('ks_mode', 'demo') === 'real' ? 'real' : 'demo');
-    setReady(true);
+    setHydrated(true);
     /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
 
@@ -73,15 +76,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return next;
     });
   }, []);
-  const setMode = useCallback((m: 'demo' | 'real') => {
-    write('ks_mode', m);
-    setModeState(m);
-  }, []);
   const t = useCallback((k: string) => tr(profile.language, k), [profile.language]);
 
   const value = useMemo(
-    () => ({ profile, setProfile, t, mode, setMode, ready }),
-    [profile, setProfile, t, mode, setMode, ready],
+    () => ({ profile, setProfile, t, mode, ready }),
+    [profile, setProfile, t, mode, ready],
   );
   return <AppCtx.Provider value={value}>{children}</AppCtx.Provider>;
 }

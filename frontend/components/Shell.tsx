@@ -1,13 +1,25 @@
 'use client';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { ChevronRight, FlaskConical, Globe, LayoutGrid, Sprout, UserRound, X } from 'lucide-react';
+import {
+  ChevronRight,
+  FlaskConical,
+  Globe,
+  LayoutGrid,
+  Loader2,
+  LogOut,
+  Sprout,
+  UserRound,
+  X,
+} from 'lucide-react';
 import { useApp } from '@/hooks/useApp';
+import { useAuth } from '@/hooks/useAuth';
+import { isPublicPath, safeNext } from '@/lib/authPaths';
 import { LANGUAGES, type Lang } from '@/lib/types';
 import { NAV, currentNav, isActive } from '@/lib/nav';
 
-function Logo() {
+export function Logo() {
   return (
     <Link
       href="/"
@@ -24,7 +36,7 @@ function Logo() {
   );
 }
 
-function LanguageSelect({ compact = false }: { compact?: boolean }) {
+export function LanguageSelect({ compact = false }: { compact?: boolean }) {
   const { t, profile, setProfile } = useApp();
   return (
     <label className="relative flex items-center">
@@ -66,19 +78,48 @@ function ModeBadge({ testId = 'mode-banner' }: { testId?: string }) {
   );
 }
 
-function ModeCard() {
-  const { t, mode, setMode } = useApp();
+/** Signs out on the server first, then clears client state and returns to the login page. */
+function useSignOut() {
+  const { logout } = useAuth();
+  const router = useRouter();
+  return async () => {
+    await logout();
+    router.replace('/login');
+  };
+}
+
+function AccountCard() {
+  const { t } = useApp();
+  const { user } = useAuth();
+  const signOut = useSignOut();
+  if (!user) return null;
   return (
-    <div className={`rounded-md p-3.5 ${mode === 'demo' ? 'bg-warning-bg' : 'bg-primary-subtle'}`}>
-      <p className="text-[0.8125rem] font-semibold">
-        {mode === 'demo' ? t('demoBanner') : t('realBanner')}
-      </p>
+    <div className={`rounded-md p-3.5 ${user.isDemo ? 'bg-warning-bg' : 'bg-surface-muted'}`}>
+      <div className="flex items-center gap-3">
+        <span
+          aria-hidden
+          className="grid size-9 shrink-0 place-items-center rounded-full bg-primary font-semibold text-on-primary"
+        >
+          {user.name.trim().charAt(0).toUpperCase() || '?'}
+        </span>
+        <div className="min-w-0">
+          <p className="truncate text-[0.875rem] font-semibold" data-testid="account-name">
+            {user.name}
+          </p>
+          <p className="truncate text-[0.8125rem] text-foreground-muted">{user.email}</p>
+        </div>
+      </div>
+      {user.isDemo && (
+        <p className="mt-2.5 text-[0.8125rem] font-medium text-warning">{t('demoBanner')}</p>
+      )}
       <button
         type="button"
-        className="btn btn-secondary btn-sm mt-2.5 w-full"
-        onClick={() => setMode(mode === 'demo' ? 'real' : 'demo')}
+        className="btn btn-secondary btn-sm mt-3 w-full"
+        onClick={() => void signOut()}
+        data-testid="logout"
       >
-        {mode === 'demo' ? t('switchToReal') : t('switchToDemo')}
+        <LogOut size={16} aria-hidden />
+        {t('logout')}
       </button>
     </div>
   );
@@ -166,7 +207,7 @@ function MoreSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
           ))}
         </ul>
         <div className="mt-4">
-          <ModeCard />
+          <AccountCard />
         </div>
       </div>
     </dialog>
@@ -215,11 +256,57 @@ function BottomNav({ onMore, moreOpen }: { onMore: () => void; moreOpen: boolean
   );
 }
 
-export default function Shell({ children }: { children: ReactNode }) {
+/** Login, register and password pages: no app navigation, just the language selector. */
+function PublicShell({ children }: { children: ReactNode }) {
+  return (
+    <div className="min-h-screen">
+      <main id="main">{children}</main>
+    </div>
+  );
+}
+
+function FullPageLoader() {
   const { t } = useApp();
+  return (
+    <div role="status" className="grid min-h-screen place-items-center text-foreground-muted">
+      <span className="flex items-center gap-2">
+        <Loader2 size={20} className="animate-spin" aria-hidden />
+        {t('loading')}
+      </span>
+    </div>
+  );
+}
+
+export default function Shell({ children }: { children: ReactNode }) {
+  const path = usePathname();
+  return isPublicPath(path) ? (
+    <PublicShell>{children}</PublicShell>
+  ) : (
+    <PrivateShell>{children}</PrivateShell>
+  );
+}
+
+/**
+ * Private pages render only after the server confirms the session (GET /auth/me). This is a UX
+ * guard; the API independently rejects every unauthenticated request for private data.
+ */
+function PrivateShell({ children }: { children: ReactNode }) {
+  const { t } = useApp();
+  const { status, signedOut } = useAuth();
+  const router = useRouter();
   const [moreOpen, setMoreOpen] = useState(false);
   const path = usePathname();
   const page = currentNav(path);
+
+  useEffect(() => {
+    if (status !== 'anonymous') return;
+    const next = safeNext(path);
+    router.replace(
+      signedOut || next === '/' ? '/login' : `/login?next=${encodeURIComponent(next)}`,
+    );
+  }, [status, signedOut, path, router]);
+
+  if (status !== 'authenticated') return <FullPageLoader />;
 
   return (
     <div className="min-h-screen md:grid md:grid-cols-[var(--sidebar-width)_1fr]">
@@ -238,7 +325,7 @@ export default function Shell({ children }: { children: ReactNode }) {
           <SidebarNav />
         </nav>
         <div className="p-3">
-          <ModeCard />
+          <AccountCard />
         </div>
       </aside>
 

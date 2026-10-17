@@ -15,6 +15,7 @@ polite, factual complaints.
 ## Contents
 
 - [Quick start (no API key, no database)](#quick-start)
+- [Signing in & the demo account](#signing-in--the-demo-account)
 - [Demo script for judges](#demo-script)
 - [Features](#features)
 - [Architecture](#architecture)
@@ -52,12 +53,69 @@ With no configuration the app runs in a fully demonstrable mode:
 To use real Claude, put `ANTHROPIC_API_KEY=...` in `backend/.env` and restart the backend. The key is read
 only on the server and never reaches the browser.
 
+Open http://localhost:3000. You land on the login page with the demo account already filled in; press
+**Sign in**.
+
+---
+
+## Signing in & the demo account
+
+Everything except the login, registration and password pages requires a signed-in account. The API enforces
+this on every request; the frontend only redirects.
+
+### Demo account (public demonstration credentials)
+
+| Email              | Password          |
+| ------------------ | ----------------- |
+| `demo@workwise.ai` | `WorkerDemo@2026` |
+
+- The login page **prefills** these and has a **Fill demo credentials** button. It never signs in by itself;
+  you still press _Sign in_.
+- These are **public** credentials for judging. They are not suitable for any real account, and every screen
+  shows a _Demo mode_ badge while you use them.
+- The demo user is a real account in the database with a restricted `demo` role and an Argon2id password hash
+  (the plaintext is never stored). Restrictions:
+  - each demo sign-in gets its **own private sandbox** of fictional data (deleted after 24 h in MongoDB), so
+    visitors sharing the login never see each other's entries, and the demo account can never see a real
+    user's records;
+  - its password cannot be reset or changed, and the demo email cannot be registered as a real account;
+  - it has no administrative permissions (the app has no admin role at all).
+
+### Provisioning, seeding and turning it off
+
+| Setting                 | Default                                           |
+| ----------------------- | ------------------------------------------------- |
+| `DEMO_ACCOUNT_ENABLED`  | **on** in development/test, **off** in production |
+| `DEMO_ACCOUNT_EMAIL`    | `demo@workwise.ai`                                |
+| `DEMO_ACCOUNT_PASSWORD` | `WorkerDemo@2026`                                 |
+
+- **In-memory mode** (no `MONGODB_URI`): the demo user is created each time the backend starts.
+- **MongoDB:** the backend also seeds it at startup, and you can run `npm run seed` yourself. Seeding is
+  idempotent: it updates the existing account (unique email index) instead of creating a duplicate, and it
+  creates nothing when the demo account is disabled.
+- **Production:** leave `DEMO_ACCOUNT_ENABLED` unset (or set `false`). The demo user is then not created, an
+  existing demo record cannot sign in, `GET /auth/demo` reveals nothing, and the login page hides the demo box.
+  Only set it to `true` on a deployment that is explicitly a public demo.
+
+### Real accounts and password reset
+
+- **Create an account** with a name, email and password (8–128 characters with a letter and a number). Nothing
+  else is asked; never Aadhaar or bank details.
+- **Forgot password** always answers with the same message, whether or not the email exists. The reset link is
+  single-use, valid for 30 minutes (`RESET_TOKEN_TTL_MINUTES`), and only its SHA-256 hash is stored. A
+  successful reset signs out every existing session of that account.
+- **Local testing:** with no `EMAIL_PROVIDER` in development, no email is sent. The message (with the link) is
+  kept in a local **dev outbox** at `http://localhost:4000/api/v1/dev/outbox`, and the forgot-password page
+  links to it. This route does not exist in production.
+- **Production email:** set `EMAIL_PROVIDER=resend`, `RESEND_API_KEY` and `EMAIL_FROM`. Without a provider,
+  password reset returns `503 EMAIL_NOT_CONFIGURED` for every email instead of pretending to send.
+
 ---
 
 ## Demo script
 
-The app opens in **Demo mode** (amber banner: "DEMO MODE — all data shown is fictional"). Demo data lives in
-its own bucket and never mixes with "My data".
+Sign in with the prefilled **demo account**. A _Demo mode_ badge stays visible, and the data you see is
+fictional and lives in a private sandbox for this sign-in.
 
 **Scenario: a food-delivery worker in Punjab who speaks Hindi/Punjabi.**
 
@@ -80,7 +138,8 @@ its own bucket and never mixes with "My data".
    The draft separates **what the worker provided** from **AI suggestions**, keeps the worker's amount and
    platform exactly, can be edited, copied and downloaded, and is never sent automatically. It is stored only if
    the consent box is ticked.
-7. **Privacy** — _Settings → Delete all my saved data_ removes everything the session stored.
+7. **Privacy** — _Settings → Delete all my saved data_ removes everything this account stored. _Sign out_
+   (sidebar or Settings) ends the session on the server.
 
 To see failure handling, stop the backend and send a chat message: the UI shows a clear offline message with
 _Try again_.
@@ -117,7 +176,8 @@ backend/   Express 5 · TypeScript strict · Zod · Mongoose · Anthropic SDK ·
   src/
     app.ts            helmet, CORS allow-list, 32 KB body limit, rate limits, session, CSRF guard
     config/env.ts     validated environment; production safety checks
-    middleware/       session (signed anonymous cookie), csrf, validate, rateLimit, errorHandler
+    auth/             Argon2id password hashing, reset tokens, mailer (dev outbox / Resend)
+    middleware/       session (express-session + requireAuth), csrf, validate, rateLimit, errorHandler
     routes/           /api/v1 router
     schemas/          Zod request schemas (strict: unknown fields rejected)
     services/         workerAssistant, earningsService, schemeGuidance, documentAssistant,
@@ -161,22 +221,28 @@ does not claim a person has verified the content against the official page.
 
 Backend (`backend/.env`, see `.env.example`):
 
-| Variable                               | Default                 | Purpose                                                       |
-| -------------------------------------- | ----------------------- | ------------------------------------------------------------- |
-| `NODE_ENV`                             | `development`           | `production` turns on the safety checks below                 |
-| `PORT`                                 | `4000`                  | API port                                                      |
-| `FRONTEND_ORIGINS`                     | `http://localhost:3000` | Comma-separated CORS allow-list (`*` rejected in production)  |
-| `MONGODB_URI`                          | empty → in-memory       | MongoDB connection string (**required in production**)        |
-| `ANTHROPIC_API_KEY`                    | empty → mock AI         | Claude API key (server-side only)                             |
-| `ANTHROPIC_MODEL`                      | `claude-sonnet-5-5`     | Claude model id                                               |
-| `AI_TIMEOUT_MS`                        | `20000`                 | Per-request AI timeout                                        |
-| `AI_MAX_OUTPUT_TOKENS`                 | `900`                   | Output token cap                                              |
-| `SESSION_SECRET`                       | random per start        | Cookie signing secret, ≥32 chars (**required in production**) |
-| `COOKIE_SECURE`                        | `false`                 | `true` behind HTTPS (**required in production**)              |
-| `ALLOW_DEMO_MODE`                      | `true`                  | Set `false` to disable the demo bucket                        |
-| `KNOWLEDGE_DIR`                        | built-in data           | Alternative folder of knowledge JSON files                    |
-| `AI_RATE_LIMIT` / `GENERAL_RATE_LIMIT` | `20` / `300`            | Requests per minute per IP+session                            |
-| `LOG_LEVEL`                            | `info`                  | pino log level                                                |
+| Variable                                                       | Default                                | Purpose                                                                               |
+| -------------------------------------------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------- |
+| `NODE_ENV`                                                     | `development`                          | `production` turns on the safety checks below                                         |
+| `PORT`                                                         | `4000`                                 | API port                                                                              |
+| `FRONTEND_ORIGINS`                                             | `http://localhost:3000`                | Comma-separated CORS allow-list (`*` rejected in production)                          |
+| `MONGODB_URI`                                                  | empty → in-memory                      | MongoDB connection string (**required in production**)                                |
+| `ANTHROPIC_API_KEY`                                            | empty → mock AI                        | Claude API key (server-side only)                                                     |
+| `ANTHROPIC_MODEL`                                              | `claude-sonnet-5-5`                    | Claude model id                                                                       |
+| `AI_TIMEOUT_MS`                                                | `20000`                                | Per-request AI timeout                                                                |
+| `AI_MAX_OUTPUT_TOKENS`                                         | `900`                                  | Output token cap                                                                      |
+| `SESSION_SECRET`                                               | random per start                       | Session cookie signing secret, ≥32 chars (**required in production**)                 |
+| `COOKIE_SECURE`                                                | `false`                                | `true` behind HTTPS (**required in production**)                                      |
+| `SESSION_TTL_HOURS` / `REMEMBER_ME_DAYS`                       | `12` / `30`                            | Server-side session lifetime without / with "Keep me signed in"                       |
+| `DEMO_ACCOUNT_ENABLED`                                         | on in dev, off in prod                 | Provision the public demo account (see above)                                         |
+| `DEMO_ACCOUNT_EMAIL` / `_PASSWORD`                             | `demo@workwise.ai` / `WorkerDemo@2026` | Public demo credentials                                                               |
+| `EMAIL_PROVIDER`                                               | empty                                  | `resend` to send reset emails (needs `RESEND_API_KEY`, `EMAIL_FROM`)                  |
+| `APP_BASE_URL`                                                 | first frontend origin                  | Base URL for reset links                                                              |
+| `RESET_TOKEN_TTL_MINUTES`                                      | `30`                                   | Reset link lifetime                                                                   |
+| `LOGIN_RATE_LIMIT` / `AUTH_RATE_LIMIT` / `REGISTER_RATE_LIMIT` | `10` / `5` / `10`                      | Per 15 min (login per IP+email and 5× per IP; forgot/reset per IP); register per hour |
+| `KNOWLEDGE_DIR`                                                | built-in data                          | Alternative folder of knowledge JSON files                                            |
+| `AI_RATE_LIMIT` / `GENERAL_RATE_LIMIT`                         | `20` / `300`                           | Requests per minute per IP+session                                                    |
+| `LOG_LEVEL`                                                    | `info`                                 | pino log level                                                                        |
 
 Frontend (`frontend/.env.local`): `NEXT_PUBLIC_API_BASE_URL` (default `http://localhost:4000/api/v1`). Nothing
 secret belongs in the frontend.
@@ -186,34 +252,44 @@ secret belongs in the frontend.
 ## API reference
 
 Base path `/api/v1`. JSON in and out. State-changing requests must send `X-Requested-With: kaamsaathi`
-(CSRF guard). The optional `X-KS-Mode: demo` header selects the caller's own demo bucket. The owner of every
-record comes from the signed session cookie, never from the request body.
+and, if the browser sends an `Origin`, it must be an allowed frontend origin (CSRF guard). Private endpoints
+return `401 AUTH_REQUIRED` without a valid session. The owner of every record comes from the server-side
+session, never from the request body.
 
 Errors always look like `{ "error": { "code": "VALIDATION_ERROR", "message": "...", "details": [...] } }`.
-Codes: `VALIDATION_ERROR` 400, `CSRF_REJECTED` 403, `NOT_FOUND` 404, `PAYLOAD_TOO_LARGE` 413,
+Codes: `VALIDATION_ERROR` 400, `RESET_TOKEN_INVALID` 400, `AUTH_REQUIRED` 401, `INVALID_CREDENTIALS` 401,
+`CSRF_REJECTED` 403, `EMAIL_IN_USE` 409, `EMAIL_NOT_CONFIGURED` 503, `NOT_FOUND` 404, `PAYLOAD_TOO_LARGE` 413,
 `RATE_LIMITED` 429, `AI_BAD_OUTPUT` 502, `AI_UNAVAILABLE` 503, `INTERNAL_ERROR` 500 (no stack traces).
 
-| Method & path                  | Body / query                                                                                                                                                               | Returns                                                                                               |
-| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `GET /health`                  | —                                                                                                                                                                          | status, AI provider (+ `isMock`), storage kind, knowledge record count                                |
-| `GET /demo/info`               | —                                                                                                                                                                          | example questions, sample complaint scenario (fictional)                                              |
-| `POST /assistant/chat`         | `message` (≤1000 chars), `language`, `history[]` (≤6), `profile{state, workCategory}`                                                                                      | `answer`, `followUpQuestions`, `citations[]`, `couldNotVerify`, `emergency`, `provider`, `disclaimer` |
-| `GET /earnings/entries`        | `from`, `to` (YYYY-MM-DD)                                                                                                                                                  | `entries[]`                                                                                           |
-| `POST /earnings/entries`       | `date`, `category`, `platform?`, `hoursWorked`, `basePay`, `tips`, `bonuses`, `incentives`, `expenses`, `deductions`, `notes?`                                             | `201 { entry }`                                                                                       |
-| `PATCH /earnings/entries/:id`  | any subset of the above                                                                                                                                                    | `{ entry }` / 404                                                                                     |
-| `DELETE /earnings/entries/:id` | —                                                                                                                                                                          | 204 / 404                                                                                             |
-| `GET /earnings/summary`        | `period=day\|week\|month`, `anchor?`                                                                                                                                       | `totals`, `series`, `anomalies`, `formulas`, `dataNotice`                                             |
-| `GET /earnings/export.csv`     | —                                                                                                                                                                          | CSV of the caller's entries                                                                           |
-| `POST /earnings/explain`       | `language`, `period`                                                                                                                                                       | AI narration of computed totals + flagged entries                                                     |
-| `GET /knowledge/sources`       | —                                                                                                                                                                          | every curated record with scope, sources, review status, limitations                                  |
-| `POST /schemes/search`         | `language`, `state?`, `workCategory?`, `ageRange?`, `hasEShramCard?`, `hasBankAccount?`, `query?`                                                                          | `results[]` with label, benefit, eligibility, documents, steps, `applyUrl`, citation                  |
-| `POST /documents/checklist`    | `language`, `purpose`                                                                                                                                                      | curated checklist + plain-language explanation                                                        |
-| `POST /documents/draft`        | `language`, `kind`, `details`, `workerName?`                                                                                                                               | draft labelled as a draft                                                                             |
-| `POST /grievances/draft`       | `language`, `facts{type, platformOrEmployer, whatHappened, incidentDate?, amountRupees?, stepsAlreadyTaken?, evidenceAvailable[], desiredResolution?}`, `saveWithConsent?` | structured draft; `201` + `id` only when consent was given                                            |
-| `GET /grievances`              | —                                                                                                                                                                          | the caller's saved drafts                                                                             |
-| `PATCH /grievances/:id`        | `status?`, `subject?`, `finalMessage?`                                                                                                                                     | `{ grievance }` / 404                                                                                 |
-| `DELETE /grievances/:id`       | —                                                                                                                                                                          | 204 / 404                                                                                             |
-| `DELETE /me/data`              | —                                                                                                                                                                          | counts of deleted earnings and complaints                                                             |
+| Method & path                     | Body / query                                                                                                                                                               | Returns                                                                                               |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `POST /auth/login` (public)       | `email`, `password`, `remember?`                                                                                                                                           | `{ user: { id, email, name, isDemo } }` + session cookie; generic 401 on any failure                  |
+| `POST /auth/register` (public)    | `name`, `email`, `password`                                                                                                                                                | `201 { user }`, signed in                                                                             |
+| `POST /auth/logout`               | —                                                                                                                                                                          | 204; session destroyed server-side, cookie cleared                                                    |
+| `GET /auth/me`                    | —                                                                                                                                                                          | `{ user }` or 401                                                                                     |
+| `POST /auth/forgot-password`      | `email`                                                                                                                                                                    | the same generic message for every email                                                              |
+| `POST /auth/reset-password`       | `token`, `password`                                                                                                                                                        | 200, or 400 `RESET_TOKEN_INVALID` (unknown, expired or used)                                          |
+| `GET /auth/demo` (public)         | —                                                                                                                                                                          | demo credentials when enabled, else `{ enabled: false }`                                              |
+| `GET /dev/outbox` (dev only)      | —                                                                                                                                                                          | locally captured reset emails; absent in production                                                   |
+| `GET /health`                     | —                                                                                                                                                                          | status, AI provider (+ `isMock`), storage kind, knowledge record count                                |
+| `GET /demo/info`                  | —                                                                                                                                                                          | example questions, sample complaint scenario (fictional)                                              |
+| `POST /assistant/chat`            | `message` (≤1000 chars), `language`, `history[]` (≤6), `profile{state, workCategory}`                                                                                      | `answer`, `followUpQuestions`, `citations[]`, `couldNotVerify`, `emergency`, `provider`, `disclaimer` |
+| `GET /earnings/entries`           | `from`, `to` (YYYY-MM-DD)                                                                                                                                                  | `entries[]`                                                                                           |
+| `POST /earnings/entries`          | `date`, `category`, `platform?`, `hoursWorked`, `basePay`, `tips`, `bonuses`, `incentives`, `expenses`, `deductions`, `notes?`                                             | `201 { entry }`                                                                                       |
+| `PATCH /earnings/entries/:id`     | any subset of the above                                                                                                                                                    | `{ entry }` / 404                                                                                     |
+| `DELETE /earnings/entries/:id`    | —                                                                                                                                                                          | 204 / 404                                                                                             |
+| `GET /earnings/summary`           | `period=day\|week\|month`, `anchor?`                                                                                                                                       | `totals`, `series`, `anomalies`, `formulas`, `dataNotice`                                             |
+| `GET /earnings/export.csv`        | —                                                                                                                                                                          | CSV of the caller's entries                                                                           |
+| `POST /earnings/explain`          | `language`, `period`                                                                                                                                                       | AI narration of computed totals + flagged entries                                                     |
+| `GET /knowledge/sources` (public) | —                                                                                                                                                                          | every curated record with scope, sources, review status, limitations                                  |
+| `POST /schemes/search`            | `language`, `state?`, `workCategory?`, `ageRange?`, `hasEShramCard?`, `hasBankAccount?`, `query?`                                                                          | `results[]` with label, benefit, eligibility, documents, steps, `applyUrl`, citation                  |
+| `POST /documents/checklist`       | `language`, `purpose`                                                                                                                                                      | curated checklist + plain-language explanation                                                        |
+| `POST /documents/draft`           | `language`, `kind`, `details`, `workerName?`                                                                                                                               | draft labelled as a draft                                                                             |
+| `POST /grievances/draft`          | `language`, `facts{type, platformOrEmployer, whatHappened, incidentDate?, amountRupees?, stepsAlreadyTaken?, evidenceAvailable[], desiredResolution?}`, `saveWithConsent?` | structured draft; `201` + `id` only when consent was given                                            |
+| `GET /grievances`                 | —                                                                                                                                                                          | the caller's saved drafts                                                                             |
+| `PATCH /grievances/:id`           | `status?`, `subject?`, `finalMessage?`                                                                                                                                     | `{ grievance }` / 404                                                                                 |
+| `DELETE /grievances/:id`          | —                                                                                                                                                                          | 204 / 404                                                                                             |
+| `DELETE /me/data`                 | —                                                                                                                                                                          | counts of deleted earnings and complaints                                                             |
 
 Document upload is intentionally **not** implemented (see limitations), so there is no upload endpoint.
 
@@ -240,13 +316,27 @@ Coverage by area:
 - **Unit** — earnings and net-income formulas, rounding, anomaly flags; input validation; language and prompt
   construction; AI output schema validation and retries; scheme eligibility filtering; source attribution and
   URL stripping; complaint fact preservation and the fact check that falls back to a template; authorization
-  helpers; production configuration guards; frontend error mapping and translation fallbacks.
+  helpers; production configuration guards; Argon2id hashing and verification; email normalisation; password
+  policy; reset-token generation, expiry, single use and supersession; demo seed idempotency and the
+  disabled-demo path; email provider; frontend error mapping, translations, login/registration form
+  validation and open-redirect-safe `?next=` handling.
 - **Integration** — mock-provider chat in Hindi with citations; missing and invalid fields; provider outage and
   timeout (503); rate limiting (429); CSRF and CORS; oversized and malformed bodies; earnings CRUD + summary +
-  CSV; **cross-user access prevention** and forged cookies; demo/guest separation; scheme search with citations;
+  CSV; **cross-user access prevention** and forged cookies; scheme search with citations;
   complaint drafting without invented facts and consent-only storage; prompt-injection attempts; Aadhaar-like
-  extra fields rejected; the same ownership, NoSQL-injection and retention checks against real MongoDB.
-- **End-to-end** — demo mode opens; switch to Hindi and ask a question; emergency banner; add an earnings entry
+  extra fields rejected; the same ownership, NoSQL-injection and retention checks against real MongoDB (with
+  sessions stored in Mongo).
+- **Auth integration** — login success and minimal profile; wrong password and unknown email give identical
+  responses; malformed input; HttpOnly/SameSite/Secure cookies and "remember me"; session-id regeneration;
+  Origin-based CSRF rejection; login and forgot-password rate limits; 401 on every private endpoint; logout
+  invalidates the old cookie; account switching shows no previous records; registration rules; forgot-password
+  response consistency; reset single use, expiry and sign-out of old sessions; no reset for the demo account;
+  honest 503 without an email provider; demo sandboxes isolated per sign-in; demo disabled.
+- **End-to-end (auth)** — login form prefilled with the demo credentials but never auto-signs-in; _Fill demo
+  credentials_ and show/hide password; inline validation; generic error for a wrong password; private pages
+  redirect to login and back; redirect only after `GET /auth/me` confirms the session; demo indicator; logout
+  ends the server session; registration; forgot-password generic answer with the dev outbox.
+- **End-to-end (journeys, signed in as demo)** — demo account labelled; switch to Hindi and ask a question; emergency banner; add an earnings entry
   and see net change by the exact amount; scheme search with official source; generate, edit and copy a
   complaint draft (checked against clipboard contents); AI outage error with working retry; offline message.
 
@@ -269,18 +359,23 @@ npm start -w frontend
 - Serve both over HTTPS. Same-site hosting (for example `app.example.in` and `api.example.in`) keeps the
   SameSite=Lax session cookie working.
 - Use a managed MongoDB with authentication and TLS; Mongoose creates the indexes, including the TTL indexes.
-- Set `ALLOW_DEMO_MODE=false` for a real-user deployment, or clearly keep it a demo site.
+- Keep `DEMO_ACCOUNT_ENABLED` unset/`false` for a real-user deployment (the default in production), or make the
+  whole deployment an explicit public demo.
+- Configure `EMAIL_PROVIDER` for password reset, otherwise reset honestly reports it is unavailable.
+- Sessions are stored in MongoDB (`sessions` collection, TTL-indexed), so they survive restarts and work
+  across several API instances.
 - Put the API behind a reverse proxy that sets `X-Forwarded-For` (the app trusts one proxy hop in production).
-- Read [SECURITY.md](SECURITY.md) before any public deployment: the anonymous session model is **not** account
-  authentication.
+- Read [SECURITY.md](SECURITY.md) before any public deployment.
 
 ---
 
 ## Known limitations
 
-- **No accounts.** Each browser gets an anonymous, signed, HttpOnly session cookie. Clearing cookies or
-  switching devices loses access to that data. Real accounts (for example phone OTP through an established
-  provider) are future work.
+- **Email/password only.** No phone-OTP sign-in, no email verification on registration, no two-factor
+  authentication and no "change password while signed in" screen yet (reset by email works).
+- **Registration reveals whether an email is registered** (`409 EMAIL_IN_USE`). Login and forgot-password do
+  not; registration is rate-limited to slow enumeration.
+- **Rate limits are in-process.** Behind several API instances they need a shared store (for example Redis).
 - **Knowledge is a small seed set** (13 records: 5 schemes, 8 rights/safety topics). Links are checked by a
   tool; the content still needs review by a person against the official pages. Only Punjab has a
   state-specific record (BOCW welfare board); other states get central schemes plus general guidance.

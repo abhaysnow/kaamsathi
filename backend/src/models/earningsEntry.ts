@@ -18,8 +18,9 @@ const earningsEntrySchema = new Schema(
     deductions: money,
     notes: { type: String, maxlength: 300 },
     source: { type: String, enum: ['user_entered', 'demo_sample'], required: true },
-    // Retention: MongoDB's TTL monitor deletes the record after this time (see SECURITY.md).
-    expiresAt: { type: Date, required: true },
+    // Retention: set only for demo-sandbox data; MongoDB's TTL monitor deletes it after this time.
+    // Account data has no expiresAt and is kept until the user deletes it (see SECURITY.md).
+    expiresAt: { type: Date },
   },
   { timestamps: true },
 );

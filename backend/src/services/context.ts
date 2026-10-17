@@ -1,3 +1,5 @@
+import type { Store } from 'express-session';
+import type { Mailer } from '../auth/mailer.js';
 import type { AppConfig } from '../config/env.js';
 import type { AIProvider } from '../ai/types.js';
 import type { KnowledgeRetrievalService } from '../knowledge/retrieval.js';
@@ -9,4 +11,8 @@ export interface AppContext {
   provider: AIProvider;
   repos: Repositories;
   knowledge: KnowledgeRetrievalService;
+  /** null = no email provider in production; password reset then reports it is unavailable. */
+  mailer: Mailer | null;
+  /** Server-side session store; undefined = express-session's in-process MemoryStore. */
+  sessionStore?: Store;
 }

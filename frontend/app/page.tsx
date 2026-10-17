@@ -15,6 +15,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useApp } from '@/hooks/useApp';
+import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/lib/api';
 import { rupees } from '@/lib/format';
 import type { GrievanceRecord, Summary } from '@/lib/types';
@@ -40,6 +41,7 @@ function Stat({ label, value }: { label: string; value: string }) {
 
 export default function Home() {
   const { t, mode, ready } = useApp();
+  const { user } = useAuth();
   const [summary, setSummary] = useState<Summary | null>(null);
   const [drafts, setDrafts] = useState<GrievanceRecord[]>([]);
 
@@ -59,7 +61,15 @@ export default function Home() {
     <div className="space-y-8 md:space-y-12">
       <section className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-2xl">
-          <p className="badge badge-primary mb-4">{t('tagline')}</p>
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <p className="badge badge-primary">{t('tagline')}</p>
+            {user?.isDemo && <p className="badge badge-warning">{t('demoAccount')}</p>}
+          </div>
+          {user && (
+            <p className="mb-1 text-[1.0625rem] font-semibold text-primary" data-testid="greeting">
+              {user.name}
+            </p>
+          )}
           <h1 className="t-hero">{t('welcome')}</h1>
           <p className="mt-3 text-[1.0625rem] text-foreground-muted">{t('sub_home')}</p>
         </div>

@@ -7,7 +7,12 @@ export type ErrorCode =
   | 'AI_BAD_OUTPUT'
   | 'CSRF_REJECTED'
   | 'PAYLOAD_TOO_LARGE'
-  | 'INTERNAL_ERROR';
+  | 'INTERNAL_ERROR'
+  | 'AUTH_REQUIRED'
+  | 'INVALID_CREDENTIALS'
+  | 'EMAIL_IN_USE'
+  | 'EMAIL_NOT_CONFIGURED'
+  | 'RESET_TOKEN_INVALID';
 
 /** Errors that are safe to show to API clients. */
 export class AppError extends Error {

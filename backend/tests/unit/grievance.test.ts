@@ -21,6 +21,7 @@ const mk = (provider: AIProvider) => ({
   provider,
   repos: createMemoryRepositories(),
   knowledge: new KnowledgeRetrievalService(loadKnowledge()),
+  mailer: null,
 });
 
 describe('grievance fact preservation', () => {

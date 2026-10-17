@@ -150,3 +150,11 @@ export interface KnowledgeRecord {
   limitations: string[];
   sources: SourceLink[];
 }
+
+/** What GET /auth/me returns: deliberately minimal. */
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+  isDemo: boolean;
+}

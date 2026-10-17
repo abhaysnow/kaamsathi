@@ -15,6 +15,7 @@ import {
 import { objectIdParam } from '../schemas/common.js';
 import { grievanceDraftBodySchema, grievanceUpdateSchema } from '../schemas/grievance.js';
 import { aiLimiter } from '../middleware/rateLimit.js';
+import { requireAuth } from '../middleware/session.js';
 import { validate } from '../middleware/validate.js';
 import type { AppContext } from '../services/context.js';
 import { chat } from '../services/workerAssistant.js';
@@ -47,7 +48,7 @@ export function buildRouter(ctx: AppContext): Router {
         isMock: ctx.provider.name === 'mock',
       },
       storage: ctx.repos.kind,
-      demoModeAllowed: ctx.config.allowDemoMode,
+      demoAccountEnabled: ctx.config.demo.enabled,
       knowledgeRecords: ctx.knowledge.all().length,
     });
   });
@@ -59,6 +60,29 @@ export function buildRouter(ctx: AppContext): Router {
       notice: 'All demo data is fictional.',
     });
   });
+
+  // Curated public guidance (no personal data).
+  r.get('/knowledge/sources', (_req, res) => {
+    res.json({
+      records: ctx.knowledge.all().map((k) => ({
+        id: k.id,
+        title: k.title,
+        kind: k.kind,
+        scope: k.scope,
+        summary: k.summary,
+        steps: k.steps,
+        topic: k.kind === 'rights' ? k.topic : undefined,
+        channels: k.kind === 'rights' ? k.channels : [],
+        contentReview: k.contentReview,
+        sources: k.sources,
+        limitations: k.limitations,
+      })),
+      notice:
+        'Link checks are automated. Content review by a human is still pending unless stated otherwise.',
+    });
+  });
+  // ---- Everything below needs a signed-in user (checked server-side on every request). ----
+  r.use(requireAuth);
 
   // ---- Assistant ----
   r.post(
@@ -153,26 +177,7 @@ export function buildRouter(ctx: AppContext): Router {
     }),
   );
 
-  // ---- Knowledge & schemes ----
-  r.get('/knowledge/sources', (_req, res) => {
-    res.json({
-      records: ctx.knowledge.all().map((k) => ({
-        id: k.id,
-        title: k.title,
-        kind: k.kind,
-        scope: k.scope,
-        summary: k.summary,
-        steps: k.steps,
-        topic: k.kind === 'rights' ? k.topic : undefined,
-        channels: k.kind === 'rights' ? k.channels : [],
-        contentReview: k.contentReview,
-        sources: k.sources,
-        limitations: k.limitations,
-      })),
-      notice:
-        'Link checks are automated. Content review by a human is still pending unless stated otherwise.',
-    });
-  });
+  // ---- Schemes ----
   r.post(
     '/schemes/search',
     ai,

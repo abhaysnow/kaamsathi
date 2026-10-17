@@ -4,12 +4,15 @@ import {
   Accessibility,
   Briefcase,
   FlaskConical,
+  LogOut,
   Lock,
   Settings,
   Trash2,
   UserRound,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useApp } from '@/hooks/useApp';
+import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/lib/api';
 import { errorKey } from '@/lib/errors';
 import { LANGUAGES, WORK_CATEGORIES, type Lang, type WorkCategory } from '@/lib/types';
@@ -41,7 +44,9 @@ function Toggle({
 }
 
 export default function SettingsPage() {
-  const { t, profile, setProfile, mode, setMode } = useApp();
+  const { t, profile, setProfile } = useApp();
+  const { user, logout } = useAuth();
+  const router = useRouter();
   const [deleted, setDeleted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -138,24 +143,35 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        <section className="card space-y-3" aria-labelledby="mode-h">
-          <h2 id="mode-h" className="t-card flex items-center gap-2">
-            {mode === 'demo' ? (
+        <section className="card space-y-3" aria-labelledby="acct-h">
+          <h2 id="acct-h" className="t-card flex items-center gap-2">
+            {user?.isDemo ? (
               <FlaskConical size={18} aria-hidden className="text-warning" />
             ) : (
               <UserRound size={18} aria-hidden className="text-primary" />
             )}
-            {mode === 'demo' ? t('demoShort') : t('realShort')}
+            {t('account')}
           </h2>
-          <p className="text-foreground-muted">
-            {mode === 'demo' ? t('demoBanner') : t('realBanner')}
-          </p>
+          <dl className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <dt className="t-support">{t('fullName')}</dt>
+              <dd className="font-medium">{user?.name}</dd>
+            </div>
+            <div>
+              <dt className="t-support">{t('email')}</dt>
+              <dd className="prose-wrap font-medium">{user?.email}</dd>
+            </div>
+          </dl>
+          {user?.isDemo && <Notice icon={FlaskConical}>{t('demoAccountRestricted')}</Notice>}
           <button
             type="button"
             className="btn btn-secondary"
-            onClick={() => setMode(mode === 'demo' ? 'real' : 'demo')}
+            onClick={async () => {
+              await logout();
+              router.replace('/login');
+            }}
           >
-            {mode === 'demo' ? t('switchToReal') : t('switchToDemo')}
+            <LogOut size={18} aria-hidden /> {t('logout')}
           </button>
         </section>
 

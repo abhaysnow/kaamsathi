@@ -1,9 +1,14 @@
 import { expect, test, type Page } from '@playwright/test';
+import { signInAsDemo } from './helpers';
 
 /**
  * Critical worker journeys against the real backend running the MOCK AI provider and in-memory
- * storage. Each test gets a fresh browser context = fresh anonymous session = fresh demo seed.
+ * storage. Each test gets a fresh browser context and signs in to the demo account, which gives
+ * it a fresh private sandbox of fictional data.
  */
+test.beforeEach(async ({ page }) => {
+  await signInAsDemo(page);
+});
 
 const rupeesToNumber = (s: string) => Number(s.replace(/[^\d.-]/g, ''));
 
@@ -14,8 +19,7 @@ async function chooseLanguage(page: Page, code: string) {
     .selectOption(code);
 }
 
-test('1. app opens in clearly labelled demo mode', async ({ page }) => {
-  await page.goto('/');
+test('1. the demo account is clearly labelled as demo', async ({ page }) => {
   await expect(page.getByTestId('mode-banner')).toContainText('DEMO MODE');
   await expect(page.getByTestId('home-net')).toBeVisible();
 });

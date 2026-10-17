@@ -1,4 +1,5 @@
-const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:4000/api/v1';
+export const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:4000/api/v1';
+const BASE = API_BASE;
 
 export class ApiError extends Error {
   constructor(
@@ -10,14 +11,8 @@ export class ApiError extends Error {
   }
 }
 
-/** Mode is read at call time so the demo/real switch applies immediately. */
-function mode(): string {
-  try {
-    return localStorage.getItem('ks_mode') === 'real' ? 'real' : 'demo';
-  } catch {
-    return 'demo';
-  }
-}
+/** Fired when the server says the session is gone; the auth provider sends the user to login. */
+export const UNAUTHORIZED_EVENT = 'ks:unauthorized';
 
 async function send(path: string, init: { method?: string; body?: unknown }): Promise<Response> {
   try {
@@ -27,7 +22,6 @@ async function send(path: string, init: { method?: string; body?: unknown }): Pr
       headers: {
         'Content-Type': 'application/json',
         'X-Requested-With': 'kaamsaathi',
-        'X-KS-Mode': mode(),
       },
       body: init.body === undefined ? undefined : JSON.stringify(init.body),
     });
@@ -45,6 +39,9 @@ export async function api<T>(
   const data = (await res.json().catch(() => ({}))) as {
     error?: { code?: string; message?: string };
   };
+  if (res.status === 401 && data.error?.code === 'AUTH_REQUIRED' && typeof window !== 'undefined') {
+    window.dispatchEvent(new Event(UNAUTHORIZED_EVENT));
+  }
   if (!res.ok)
     throw new ApiError(
       res.status,
@@ -54,10 +51,7 @@ export async function api<T>(
   return data as T;
 }
 
-/**
- * Plain-text download through fetch (not an <a href>) so the request carries the demo/real mode
- * header; a bare link would always hit the "real" bucket.
- */
+/** Plain-text download through fetch so errors surface in the UI like every other request. */
 export async function apiText(path: string): Promise<string> {
   const res = await send(path, {});
   if (!res.ok) throw new ApiError(res.status, 'ERROR', 'Request failed');

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Inter, Noto_Sans_Devanagari, Noto_Sans_Gurmukhi } from 'next/font/google';
 import type { ReactNode } from 'react';
 import { AppProvider } from '@/hooks/useApp';
+import { AuthProvider } from '@/hooks/useAuth';
 import Shell from '@/components/Shell';
 import './globals.css';
 
@@ -34,9 +35,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={`${inter.variable} ${notoDeva.variable} ${notoGuru.variable}`}>
       <body>
-        <AppProvider>
-          <Shell>{children}</Shell>
-        </AppProvider>
+        <AuthProvider>
+          <AppProvider>
+            <Shell>{children}</Shell>
+          </AppProvider>
+        </AuthProvider>
       </body>
     </html>
   );

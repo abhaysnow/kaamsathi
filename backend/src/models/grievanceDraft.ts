@@ -8,8 +8,9 @@ const grievanceSchema = new Schema(
     status: { type: String, enum: ['draft', 'sent_by_worker', 'resolved'], default: 'draft' },
     // Stored only after the worker gave explicit consent (enforced in the service layer).
     draft: { type: Schema.Types.Mixed, required: true },
-    // Retention: MongoDB's TTL monitor deletes the record after this time (see SECURITY.md).
-    expiresAt: { type: Date, required: true },
+    // Retention: set only for demo-sandbox data; MongoDB's TTL monitor deletes it after this time.
+    // Account data has no expiresAt and is kept until the user deletes it (see SECURITY.md).
+    expiresAt: { type: Date },
   },
   { timestamps: true },
 );

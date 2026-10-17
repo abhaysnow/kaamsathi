@@ -98,3 +98,25 @@ export interface GrievanceRecord {
   createdAt: string;
   updatedAt: string;
 }
+
+/** "demo" is the shared public demonstration account: sandboxed data, no password changes. */
+export type UserRole = 'user' | 'demo';
+
+export interface UserRecord {
+  id: string;
+  email: string;
+  name: string;
+  passwordHash: string;
+  role: UserRole;
+  /** Bumped on password reset; sessions carrying an older value are rejected. */
+  sessionVersion: number;
+  createdAt: string;
+}
+
+/** The only user fields the API ever returns. */
+export interface PublicUser {
+  id: string;
+  email: string;
+  name: string;
+  isDemo: boolean;
+}
