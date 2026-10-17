@@ -1,0 +1,268 @@
+[
+  {
+    "kind": "scheme",
+    "id": "eshram-registration",
+    "title": "e-Shram registration (National Database of Unorganised Workers)",
+    "scope": "central_law",
+    "summary": "e-Shram is the Government of India's national database of unorganised workers. Registering gives the worker a Universal Account Number (UAN) card and is commonly the first step to being considered for other labour welfare schemes.",
+    "benefit": "A national worker registration/ID. Registration itself is not a cash payment; some benefits (for example accident insurance linked to registration) have conditions, so check the portal for what applies today.",
+    "eligibility": [
+      "Unorganised worker, including self-employed and wage workers.",
+      "Age band stated on the portal is generally 16–59 years (confirm on the portal).",
+      "Generally not a member of EPFO/ESIC and not an income-tax payer (confirm on the portal).",
+      "Government announcements have indicated that gig/platform workers can also register; confirm current status on the portal."
+    ],
+    "documents": [
+      "Aadhaar-linked mobile number (entered only on the official portal, never in this app)",
+      "Bank account details (entered only on the official portal)"
+    ],
+    "applicationSteps": [
+      "Open the official e-Shram portal (link below) or visit a Common Service Centre.",
+      "Choose self-registration and verify with your own mobile number on the official site.",
+      "Fill in work and bank details on the official site and submit.",
+      "Download or save your UAN card/number."
+    ],
+    "applyUrl": "https://eshram.gov.in",
+    "states": "ALL",
+    "workerCategories": "ALL",
+    "age": { "min": 16, "max": 59 },
+    "requiresBankAccount": true,
+    "availabilityNote": "Open status and exact criteria must be confirmed on eshram.gov.in; this app cannot confirm that registration is open.",
+    "keywords": [
+      "eshram",
+      "e-shram",
+      "shram",
+      "registration",
+      "uan",
+      "unorganised",
+      "gig",
+      "platform",
+      "ई-श्रम",
+      "ਈ-ਸ਼੍ਰਮ",
+      "card",
+      "scheme",
+      "yojana"
+    ],
+    "steps": [],
+    "sources": [
+      {
+        "name": "e-Shram portal, Ministry of Labour & Employment",
+        "url": "https://eshram.gov.in",
+        "linkStatus": "reachable",
+        "linkCheckedOn": "2026-10-17"
+      }
+    ],
+    "contentReview": "pending_human_review",
+    "limitations": [
+      "Eligibility rules can change. Confirm on the official portal before relying on this summary."
+    ]
+  },
+  {
+    "kind": "scheme",
+    "id": "pm-sym-pension",
+    "title": "Pradhan Mantri Shram Yogi Maan-dhan (PM-SYM) pension scheme",
+    "scope": "central_law",
+    "summary": "A voluntary, contributory pension scheme for unorganised workers. The worker contributes monthly and may receive a pension after reaching the scheme's pension age, subject to scheme rules.",
+    "benefit": "A pension after the pension age, under the scheme's contribution rules. Amounts and contributions are not stated here; check the official site.",
+    "eligibility": [
+      "Unorganised worker.",
+      "Entry age band is generally 18–40 years (confirm on the official site).",
+      "A monthly income ceiling applies (confirm the current ceiling on the official site).",
+      "Generally not covered by EPFO/ESIC/NPS and not an income-tax payer (confirm on the official site)."
+    ],
+    "documents": ["Savings bank account / Jan Dhan account", "Mobile number"],
+    "applicationSteps": [
+      "Open the official Maandhan portal (link below) or visit a Common Service Centre.",
+      "Follow the official enrolment steps and check the contribution before agreeing.",
+      "Keep your enrolment receipt."
+    ],
+    "applyUrl": "https://maandhan.in",
+    "states": "ALL",
+    "workerCategories": "ALL",
+    "age": { "min": 18, "max": 40 },
+    "requiresBankAccount": true,
+    "availabilityNote": "Open status must be confirmed on maandhan.in.",
+    "keywords": [
+      "pension",
+      "pm-sym",
+      "maandhan",
+      "shram yogi",
+      "old age",
+      "retirement",
+      "budhapa",
+      "पेंशन",
+      "ਪੈਨਸ਼ਨ",
+      "scheme",
+      "yojana"
+    ],
+    "steps": [],
+    "sources": [
+      {
+        "name": "Maandhan portal, Government of India",
+        "url": "https://maandhan.in",
+        "linkStatus": "reachable",
+        "linkCheckedOn": "2026-10-17"
+      }
+    ],
+    "contentReview": "pending_human_review",
+    "limitations": [
+      "Contribution amounts and income ceiling are intentionally omitted: check the official site."
+    ]
+  },
+  {
+    "kind": "scheme",
+    "id": "jan-suraksha-insurance",
+    "title": "Jan Suraksha insurance schemes (PMJJBY life cover and PMSBY accident cover)",
+    "scope": "central_law",
+    "summary": "Low-premium insurance schemes offered through participating banks: PMJJBY (life cover) and PMSBY (accidental death/disability cover). Enrolment is through your bank and premium is usually auto-debited from your bank account.",
+    "benefit": "Life insurance (PMJJBY) and accident insurance (PMSBY) as per the scheme terms published on the official portal.",
+    "eligibility": [
+      "Must hold a bank account with a participating bank and give auto-debit consent.",
+      "Each scheme has its own age band (confirm on the official portal).",
+      "Renewal is typically yearly; coverage lapses if the premium is not debited."
+    ],
+    "documents": ["Bank account", "Consent for auto-debit from the bank"],
+    "applicationSteps": [
+      "Visit your bank branch or net-banking and ask for the Jan Suraksha schemes.",
+      "Read the premium and coverage terms on the official portal first.",
+      "Keep the enrolment confirmation and note the renewal month."
+    ],
+    "applyUrl": "https://jansuraksha.gov.in",
+    "states": "ALL",
+    "workerCategories": "ALL",
+    "age": { "min": 18, "max": 70 },
+    "requiresBankAccount": true,
+    "availabilityNote": "Check your bank and jansuraksha.gov.in for current enrolment.",
+    "keywords": [
+      "insurance",
+      "bima",
+      "accident",
+      "pmsby",
+      "pmjjby",
+      "suraksha",
+      "jan suraksha",
+      "life cover",
+      "बीमा",
+      "ਬੀਮਾ",
+      "scheme",
+      "yojana"
+    ],
+    "steps": [],
+    "sources": [
+      {
+        "name": "Jan Suraksha portal, Government of India",
+        "url": "https://jansuraksha.gov.in",
+        "linkStatus": "reachable",
+        "linkCheckedOn": "2026-10-17"
+      }
+    ],
+    "contentReview": "pending_human_review",
+    "limitations": [
+      "The 18–70 range is the outer bound across both schemes; each scheme's own band is narrower or different."
+    ]
+  },
+  {
+    "kind": "scheme",
+    "id": "pmjay-health",
+    "title": "Ayushman Bharat PM-JAY health coverage",
+    "scope": "central_law",
+    "summary": "A government health-protection scheme run by the National Health Authority with state implementation. Eligibility is mostly decided by household lists and state rules, not by job type, so a worker must check their own household status.",
+    "benefit": "Cashless hospital treatment at empanelled hospitals for eligible families, as per scheme rules. Amounts are not stated here.",
+    "eligibility": [
+      "Eligibility depends on household inclusion in official lists and state rules, not on occupation alone.",
+      "Government announcements have mentioned health coverage for gig/platform workers; confirm current status with the National Health Authority."
+    ],
+    "documents": [
+      "Ration card or other ID as required by your state (do not share numbers in this app)"
+    ],
+    "applicationSteps": [
+      "Open the National Health Authority site (link below) and use the official eligibility check.",
+      "Or ask at a nearby empanelled hospital's Ayushman Mitra help desk.",
+      "Keep any e-card issued to you."
+    ],
+    "applyUrl": "https://nha.gov.in/PM-JAY",
+    "states": "ALL",
+    "workerCategories": "ALL",
+    "requiresBankAccount": false,
+    "availabilityNote": "Participation differs by state. Confirm with your state health agency or the official site.",
+    "keywords": [
+      "health",
+      "hospital",
+      "ayushman",
+      "pmjay",
+      "pm-jay",
+      "treatment",
+      "medical",
+      "ilaj",
+      "इलाज",
+      "ਇਲਾਜ",
+      "scheme",
+      "yojana",
+      "accident"
+    ],
+    "steps": [],
+    "sources": [
+      {
+        "name": "National Health Authority — PM-JAY",
+        "url": "https://nha.gov.in/PM-JAY",
+        "linkStatus": "reachable",
+        "linkCheckedOn": "2026-10-17"
+      }
+    ],
+    "contentReview": "pending_human_review",
+    "limitations": ["We do not determine eligibility. The official check decides."]
+  },
+  {
+    "kind": "scheme",
+    "id": "punjab-bocw-welfare",
+    "title": "Construction worker welfare board registration (Punjab)",
+    "scope": "state_provision",
+    "summary": "Construction workers can usually register with their state's Building and Other Construction Workers (BOCW) Welfare Board to be considered for board welfare benefits. In Punjab the Labour Department's portal is the place to start.",
+    "benefit": "Welfare benefits offered by the state board to registered construction workers; the list and amounts change, so check the portal.",
+    "eligibility": [
+      "Engaged in building or other construction work.",
+      "Age band and a minimum number of days worked in the preceding year are set by the BOCW rules (confirm the current figures on the Punjab portal).",
+      "Registration with the board is generally required before benefits can be claimed."
+    ],
+    "documents": [
+      "Proof of age and identity as listed on the portal",
+      "Proof of construction work (e.g. employer/contractor certificate, as the board specifies)",
+      "Bank account"
+    ],
+    "applicationSteps": [
+      "Open the Punjab Labour Department portal (link below) and look for the construction worker registration section.",
+      "Or visit your district labour office and ask for BOCW registration.",
+      "Keep your registration number and renew if the board requires it."
+    ],
+    "applyUrl": "https://pblabour.gov.in",
+    "states": ["Punjab"],
+    "workerCategories": ["construction", "daily_wage"],
+    "requiresBankAccount": true,
+    "availabilityNote": "Exact forms and renewal rules must be confirmed on pblabour.gov.in or at the district labour office.",
+    "keywords": [
+      "construction",
+      "bocw",
+      "welfare board",
+      "building",
+      "mazdoor",
+      "labour card",
+      "majdoor",
+      "punjab",
+      "मज़दूर",
+      "ਮਜ਼ਦੂਰ",
+      "scheme",
+      "yojana"
+    ],
+    "steps": [],
+    "sources": [
+      {
+        "name": "Punjab Labour Department (eLabourPunjab)",
+        "url": "https://pblabour.gov.in",
+        "linkStatus": "reachable",
+        "linkCheckedOn": "2026-10-17"
+      }
+    ],
+    "contentReview": "pending_human_review",
+    "limitations": ["Only Punjab is seeded. Other states need their own verified records."]
+  }
+]

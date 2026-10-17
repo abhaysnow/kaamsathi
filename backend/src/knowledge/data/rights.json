@@ -1,0 +1,441 @@
+[
+  {
+    "kind": "rights",
+    "id": "payment-dispute",
+    "scope": "best_practice",
+    "topic": "payment",
+    "title": "Payment delayed, withheld or deducted",
+    "summary": "If a platform or employer has not paid, paid less, or made a deduction you do not understand, first collect proof, then raise it in writing with the platform, then use official complaint channels. Whether a platform worker is covered by a particular wage law can depend on how the work is classified, so this guide does not promise a legal outcome.",
+    "keywords": [
+      "payment",
+      "paid",
+      "unpaid",
+      "salary",
+      "wages",
+      "wage",
+      "deduction",
+      "incentive",
+      "bhugtan",
+      "paisa",
+      "payment rok",
+      "rok di",
+      "kam payment",
+      "kam mila",
+      "delay",
+      "pending",
+      "भुगतान",
+      "पैसे",
+      "पेमेंट",
+      "ਭੁਗਤਾਨ",
+      "ਪੈਸੇ",
+      "complaint",
+      "dispute"
+    ],
+    "steps": [
+      "Save proof: screenshots of the earnings screen, trip/order IDs, chat messages, dates and amounts.",
+      "Raise a ticket in the platform's help section and keep the ticket number.",
+      "If there is no reply, write a polite, factual complaint (this app can draft one for you to review).",
+      "Escalate to official channels such as your state Labour Department or the Central Public Grievance portal (CPGRAMS), and ask a legal aid service if you need help."
+    ],
+    "channels": [
+      {
+        "name": "Central Public Grievance Redress (CPGRAMS)",
+        "url": "https://pgportal.gov.in",
+        "note": "Government of India grievance portal. It routes grievances; it does not guarantee a result."
+      },
+      {
+        "name": "Shram Suvidha portal (Ministry of Labour & Employment)",
+        "url": "https://shramsuvidha.gov.in",
+        "note": "Labour portal; check which services apply to your work."
+      }
+    ],
+    "sources": [
+      {
+        "name": "Ministry of Labour & Employment",
+        "url": "https://labour.gov.in",
+        "linkStatus": "reachable",
+        "linkCheckedOn": "2026-10-17"
+      },
+      {
+        "name": "CPGRAMS — Government of India",
+        "url": "https://pgportal.gov.in",
+        "linkStatus": "reachable",
+        "linkCheckedOn": "2026-10-17"
+      }
+    ],
+    "contentReview": "pending_human_review",
+    "limitations": [
+      "Coverage of platform workers under wage laws is not settled here; ask the Labour Department.",
+      "Platform in-app steps are best practice, not a legal requirement."
+    ]
+  },
+  {
+    "kind": "rights",
+    "id": "work-accident",
+    "scope": "emergency",
+    "topic": "accident",
+    "title": "Accident while working",
+    "summary": "In an accident, safety and medical care come first. If someone is badly hurt or in danger, call the national emergency number 112. Then record what happened and tell the platform or employer in writing. Whether any compensation or insurance applies depends on your work type and cover, which must be checked with official sources.",
+    "keywords": [
+      "accident",
+      "injury",
+      "injured",
+      "hurt",
+      "hospital",
+      "crash",
+      "fell",
+      "durghatna",
+      "chot",
+      "emergency",
+      "ambulance",
+      "ho gaya",
+      "दुर्घटना",
+      "चोट",
+      "एक्सीडेंट",
+      "ਹਾਦਸਾ",
+      "ਸੱਟ",
+      "insurance",
+      "compensation"
+    ],
+    "steps": [
+      "If life is in danger, call 112 now (national emergency number). Do not wait to collect documents.",
+      "Get medical treatment and keep every bill, prescription and discharge paper.",
+      "If it was a road accident or someone else was at fault, ask the police to record it and keep the copy or number.",
+      "Tell your platform or employer in writing, with date, place and a short description. Keep a copy.",
+      "Check whether you have any insurance (platform cover, bank-linked accident cover, e-Shram linked benefits) and ask them for the claim steps."
+    ],
+    "channels": [
+      {
+        "name": "National Emergency Number 112",
+        "note": "Call 112 from any phone for police, fire or ambulance help."
+      },
+      {
+        "name": "Jan Suraksha accident insurance (PMSBY) information",
+        "url": "https://jansuraksha.gov.in",
+        "note": "Only if you are already enrolled through your bank."
+      }
+    ],
+    "sources": [
+      {
+        "name": "National Emergency Response Support System (112)",
+        "url": "https://www.112.gov.in",
+        "linkStatus": "unreachable_from_checker",
+        "linkCheckedOn": "2026-10-17"
+      },
+      {
+        "name": "Jan Suraksha portal",
+        "url": "https://jansuraksha.gov.in",
+        "linkStatus": "reachable",
+        "linkCheckedOn": "2026-10-17"
+      }
+    ],
+    "contentReview": "pending_human_review",
+    "limitations": [
+      "The 112 site could not be reached by our automated checker; 112 is the national emergency number but confirm on the official site.",
+      "We cannot say whether you are entitled to compensation."
+    ]
+  },
+  {
+    "kind": "rights",
+    "id": "occupational-safety",
+    "scope": "best_practice",
+    "topic": "safety",
+    "title": "Staying safe at work (general practice)",
+    "summary": "General safety habits reduce accidents: protective gear suited to the job, rest breaks, safe vehicles, and reporting hazards. These are best practices; the legal safety duties of an employer depend on the law that applies to your type of work.",
+    "keywords": [
+      "safety",
+      "safe",
+      "helmet",
+      "heat",
+      "rain",
+      "night",
+      "harness",
+      "construction",
+      "site",
+      "protective",
+      "gear",
+      "suraksha",
+      "surakhsha",
+      "सुरक्षा",
+      "हेलमेट",
+      "ਸੁਰੱਖਿਆ",
+      "tips",
+      "road",
+      "bike",
+      "scooter"
+    ],
+    "steps": [
+      "Wear a helmet and reflective items on a two-wheeler; do not use the phone while riding.",
+      "In heat, drink water often and rest in the shade; avoid very long continuous hours.",
+      "On construction sites, use the protective gear provided, do not work at height without proper safety equipment, and report hazards to the supervisor.",
+      "Keep emergency contacts saved and share your live location with someone you trust on night shifts."
+    ],
+    "channels": [],
+    "sources": [
+      {
+        "name": "DGFASLI — Directorate General Factory Advice Service & Labour Institutes",
+        "url": "https://dgfasli.gov.in",
+        "linkStatus": "reachable",
+        "linkCheckedOn": "2026-10-17"
+      }
+    ],
+    "contentReview": "pending_human_review",
+    "limitations": ["General best practice, not a statement of any specific legal duty."]
+  },
+  {
+    "kind": "rights",
+    "id": "harassment-abuse",
+    "scope": "emergency",
+    "topic": "harassment",
+    "title": "Harassment, abuse or threats at work",
+    "summary": "You can seek help if you face harassment or abuse. If you are in immediate danger, call 112. For women facing harassment at work, there is a government online complaint portal (SHe-Box). Written notes made soon after each incident help any complaint.",
+    "keywords": [
+      "harassment",
+      "abuse",
+      "threat",
+      "molest",
+      "misbehave",
+      "misbehaviour",
+      "violence",
+      "beat",
+      "threatening",
+      "badtameezi",
+      "dhamki",
+      "छेड़छाड़",
+      "गाली",
+      "धमकी",
+      "ਧਮਕੀ",
+      "ਛੇੜਛਾੜ",
+      "women",
+      "sexual"
+    ],
+    "steps": [
+      "If you are in danger, move to a safe place and call 112.",
+      "Write down date, time, place, what was said or done, and any witnesses, as soon as you can.",
+      "Save messages, call records or photos, if safe to do so.",
+      "Report to the platform or employer in writing. For sexual harassment at work, women can use the official SHe-Box portal."
+    ],
+    "channels": [
+      { "name": "National Emergency Number 112", "note": "For immediate danger." },
+      {
+        "name": "SHe-Box (Ministry of Women and Child Development)",
+        "url": "https://shebox.wcd.gov.in",
+        "note": "Online complaint portal for sexual harassment at work."
+      }
+    ],
+    "sources": [
+      {
+        "name": "SHe-Box, Ministry of Women and Child Development",
+        "url": "https://shebox.wcd.gov.in",
+        "linkStatus": "reachable",
+        "linkCheckedOn": "2026-10-17"
+      },
+      {
+        "name": "National Emergency Response Support System (112)",
+        "url": "https://www.112.gov.in",
+        "linkStatus": "unreachable_from_checker",
+        "linkCheckedOn": "2026-10-17"
+      }
+    ],
+    "contentReview": "pending_human_review",
+    "limitations": [
+      "Which committee or authority handles your case depends on your workplace type. Ask the official portal or legal aid."
+    ]
+  },
+  {
+    "kind": "rights",
+    "id": "account-suspension",
+    "scope": "platform_policy",
+    "topic": "suspension",
+    "title": "Platform account suspended or deactivated",
+    "summary": "Account suspension rules are mostly set by each platform's own terms. There may be no fixed legal right to reinstatement, so the practical route is to ask for the reason in writing, appeal in the app, and keep records.",
+    "keywords": [
+      "suspend",
+      "suspended",
+      "suspension",
+      "deactivate",
+      "deactivated",
+      "blocked",
+      "block",
+      "banned",
+      "id band",
+      "account band",
+      "id block",
+      "terminated",
+      "account",
+      "आईडी",
+      "ब्लॉक",
+      "बंद",
+      "ਬਲੌਕ",
+      "ਖਾਤਾ"
+    ],
+    "steps": [
+      "Take a screenshot of the message or notice that shows the suspension.",
+      "Ask the platform, in writing, for the exact reason and the appeal process.",
+      "Submit the appeal in the app and keep the ticket number.",
+      "Keep your earnings records and any pending payment details; you can still raise unpaid dues separately."
+    ],
+    "channels": [
+      {
+        "name": "Central Public Grievance Redress (CPGRAMS)",
+        "url": "https://pgportal.gov.in",
+        "note": "Can be used to raise a grievance; it does not guarantee reinstatement."
+      }
+    ],
+    "sources": [
+      {
+        "name": "CPGRAMS — Government of India",
+        "url": "https://pgportal.gov.in",
+        "linkStatus": "reachable",
+        "linkCheckedOn": "2026-10-17"
+      }
+    ],
+    "contentReview": "pending_human_review",
+    "limitations": ["Platform policy, not a statutory entitlement. Outcomes are not guaranteed."]
+  },
+  {
+    "kind": "rights",
+    "id": "free-legal-aid",
+    "scope": "central_law",
+    "topic": "legal_aid",
+    "title": "Free legal aid",
+    "summary": "The National Legal Services Authority (NALSA) and state legal services authorities offer free legal aid to eligible persons. Eligibility rules apply. Use the official NALSA site to find the helpline and your nearest legal services authority.",
+    "keywords": [
+      "legal",
+      "lawyer",
+      "court",
+      "vakil",
+      "legal aid",
+      "free lawyer",
+      "advocate",
+      "case",
+      "sue",
+      "वकील",
+      "कानूनी",
+      "ਵਕੀਲ",
+      "ਕਾਨੂੰਨੀ",
+      "help",
+      "rights"
+    ],
+    "steps": [
+      "Open the NALSA site (link below) and look for the helpline and 'Legal Services Authority' contacts.",
+      "Contact your District Legal Services Authority and explain your issue in simple words.",
+      "Carry copies of your evidence (not originals)."
+    ],
+    "channels": [
+      {
+        "name": "National Legal Services Authority (NALSA)",
+        "url": "https://nalsa.gov.in",
+        "note": "Find the official helpline number and district authority on this site."
+      }
+    ],
+    "sources": [
+      {
+        "name": "National Legal Services Authority",
+        "url": "https://nalsa.gov.in",
+        "linkStatus": "reachable",
+        "linkCheckedOn": "2026-10-17"
+      }
+    ],
+    "contentReview": "pending_human_review",
+    "limitations": ["Free legal aid has eligibility criteria set by law."]
+  },
+  {
+    "kind": "rights",
+    "id": "payment-fraud",
+    "scope": "central_law",
+    "topic": "fraud",
+    "title": "Online payment fraud or scam",
+    "summary": "If you lost money to an online scam, report it quickly on the official National Cyber Crime Reporting Portal and tell your bank. Never share OTPs or PINs with anyone, including people claiming to be from a platform.",
+    "keywords": [
+      "fraud",
+      "scam",
+      "cheat",
+      "otp",
+      "upi",
+      "cyber",
+      "phishing",
+      "fake",
+      "dhokha",
+      "ठगी",
+      "धोखा",
+      "ਧੋਖਾ",
+      "online",
+      "money lost"
+    ],
+    "steps": [
+      "Tell your bank immediately to block the transaction or card.",
+      "Report on the official cybercrime portal (link below).",
+      "Keep screenshots, transaction IDs and phone numbers involved."
+    ],
+    "channels": [
+      {
+        "name": "National Cyber Crime Reporting Portal",
+        "url": "https://www.cybercrime.gov.in",
+        "note": "Official portal; it lists the current helpline."
+      }
+    ],
+    "sources": [
+      {
+        "name": "National Cyber Crime Reporting Portal",
+        "url": "https://www.cybercrime.gov.in",
+        "linkStatus": "reachable",
+        "linkCheckedOn": "2026-10-17"
+      }
+    ],
+    "contentReview": "pending_human_review",
+    "limitations": ["Recovery of money is not guaranteed."]
+  },
+  {
+    "kind": "rights",
+    "id": "working-conditions",
+    "scope": "central_law",
+    "topic": "working_conditions",
+    "title": "Working hours, rest and working conditions",
+    "summary": "India's labour laws are being reorganised into four Labour Codes, and how they apply to gig and platform workers is still developing. Rather than guessing, check the Ministry of Labour & Employment for what currently applies to your type of work and state.",
+    "keywords": [
+      "hours",
+      "overtime",
+      "rest",
+      "break",
+      "holiday",
+      "leave",
+      "conditions",
+      "working hours",
+      "shift",
+      "labour code",
+      "social security",
+      "gig",
+      "platform",
+      "code on social security",
+      "घंटे",
+      "छुट्टी",
+      "ਘੰਟੇ",
+      "ਛੁੱਟੀ"
+    ],
+    "steps": [
+      "Note your daily hours in the Earnings tab; this gives you a record.",
+      "Check the Ministry of Labour & Employment site for current rules for your category.",
+      "Ask your state Labour Department which rules cover you."
+    ],
+    "channels": [
+      {
+        "name": "Ministry of Labour & Employment",
+        "url": "https://labour.gov.in",
+        "note": "Official source for Labour Codes and their status."
+      }
+    ],
+    "sources": [
+      {
+        "name": "Ministry of Labour & Employment",
+        "url": "https://labour.gov.in",
+        "linkStatus": "reachable",
+        "linkCheckedOn": "2026-10-17"
+      }
+    ],
+    "contentReview": "pending_human_review",
+    "limitations": [
+      "No specific entitlement (hours, overtime pay, leave) is stated because applicability to platform workers is not verified here."
+    ]
+  }
+]
