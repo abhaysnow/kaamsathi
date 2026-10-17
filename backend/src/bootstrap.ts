@@ -1,5 +1,5 @@
 import MongoStore from 'connect-mongo';
-import { AnthropicProvider } from './ai/anthropicProvider.js';
+import { GeminiProvider } from './ai/geminiProvider.js';
 import { MockAIProvider } from './ai/mockProvider.js';
 import type { AIProvider } from './ai/types.js';
 import { createMailer } from './auth/mailer.js';
@@ -12,8 +12,8 @@ import { seedDemoUser } from './services/authService.js';
 import type { AppContext } from './services/context.js';
 
 export function createProvider(config: AppConfig): AIProvider {
-  return config.anthropicApiKey
-    ? new AnthropicProvider(config.anthropicApiKey, config.anthropicModel)
+  return config.geminiApiKey
+    ? new GeminiProvider(config.geminiApiKey, config.geminiModel)
     : new MockAIProvider();
 }
 

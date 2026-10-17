@@ -94,7 +94,7 @@ export interface GrievanceRecord {
   language: Language;
   draft: GrievanceDraftContent;
   status: 'draft' | 'sent_by_worker' | 'resolved';
-  provider: 'anthropic' | 'mock';
+  provider: 'gemini' | 'mock';
   createdAt: string;
   updatedAt: string;
 }

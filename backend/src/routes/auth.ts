@@ -1,6 +1,7 @@
 import { Router, type Request, type Response } from 'express';
 import type { z } from 'zod';
 import { DevOutboxMailer } from '../auth/mailer.js';
+import { ensureDemoSeed } from '../services/demoData.js';
 import { authLimiter, loginLimiters, registerLimiter } from '../middleware/rateLimit.js';
 import { endSession, requireAuth, startSession } from '../middleware/session.js';
 import { validate } from '../middleware/validate.js';
@@ -47,6 +48,9 @@ export function buildAuthRouter(ctx: AppContext): Router {
       const user = await authenticate(ctx, body.email, body.password);
       if (!user) throw INVALID_CREDENTIALS;
       await startSession(req, user, ctx.config, body.remember);
+      // Fill the new demo sandbox now, inside this one request, so parallel page loads cannot
+      // both find it empty and seed it twice.
+      if (user.role === 'demo') await ensureDemoSeed(ctx, `demo:${req.session.demoBucket}`);
       res.json({ user: toPublicUser(user) });
     }),
   );

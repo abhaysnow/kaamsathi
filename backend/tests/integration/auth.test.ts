@@ -362,6 +362,19 @@ describe('demo account restrictions', () => {
     expect(v2).toHaveLength(7); // fresh fictional seed only
   });
 
+  it('seeds the demo sandbox exactly once, even when the first pages load in parallel', async () => {
+    const { app } = await makeApp();
+    const demo = await demoAgent(app);
+    const [entries, summary, again] = await Promise.all([
+      demo.get('/api/v1/earnings/entries'),
+      demo.get('/api/v1/earnings/summary?period=month'),
+      demo.get('/api/v1/earnings/entries'),
+    ]);
+    expect(entries.body.entries).toHaveLength(7);
+    expect(again.body.entries).toHaveLength(7);
+    expect(summary.status).toBe(200);
+  });
+
   it('GET /auth/demo publishes the demo credentials only while the demo account is enabled', async () => {
     const on = await makeApp();
     expect((await request(on.app).get('/api/v1/auth/demo')).body).toEqual({

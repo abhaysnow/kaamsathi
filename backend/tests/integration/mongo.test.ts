@@ -47,6 +47,17 @@ describe('MongoDB repository', () => {
     expect(doc?.passwordHash).toMatch(/^\$argon2id\$/);
   });
 
+  it('demo sandbox is seeded once on MongoDB even with parallel first requests', async () => {
+    const demo = await demoAgent(app);
+    const results = await Promise.all([
+      demo.get('/api/v1/earnings/entries'),
+      demo.get('/api/v1/earnings/summary?period=month'),
+      demo.get('/api/v1/earnings/entries'),
+    ]);
+    expect(results[0].body.entries).toHaveLength(7);
+    expect(results[2].body.entries).toHaveLength(7);
+  });
+
   it('stores sessions server-side in MongoDB and deletes them on logout', async () => {
     const a = await demoAgent(app);
     const sessions = repos.client!().db().collection('sessions');

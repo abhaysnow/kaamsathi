@@ -9,7 +9,7 @@ createApp(ctx).listen(config.port, () => {
   logger.info(
     { port: config.port, ai: ctx.provider.name, storage: ctx.repos.kind },
     ctx.provider.name === 'mock'
-      ? 'KaamSaathi API up (MOCK AI provider — no ANTHROPIC_API_KEY)'
+      ? 'KaamSaathi API up (MOCK AI provider — no GEMINI_API_KEY)'
       : 'KaamSaathi API up',
   );
   if (ctx.repos.kind === 'memory') logger.warn('Using in-memory storage: data is lost on restart');

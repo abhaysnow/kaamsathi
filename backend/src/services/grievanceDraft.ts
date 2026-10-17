@@ -141,7 +141,7 @@ export async function draftGrievance(
   };
 
   let generated: z.infer<typeof out> | undefined;
-  let provider: 'anthropic' | 'mock' = ctx.provider.name;
+  let provider: 'gemini' | 'mock' = ctx.provider.name;
   let model = ctx.provider.model;
   let attempts = 0;
   while (attempts < 2 && !generated) {

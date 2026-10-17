@@ -35,7 +35,7 @@ interface GrievanceCtx {
 const json = (o: unknown) => JSON.stringify(o);
 
 /**
- * Deterministic stand-in used when no ANTHROPIC_API_KEY is configured. It is NOT an AI model:
+ * Deterministic stand-in used when no GEMINI_API_KEY is configured. It is NOT an AI model:
  * every response is built from templates plus retrieved/verified data, and the API marks it
  * with provider "mock" so the UI can show an unmissable "Demo AI" badge.
  */

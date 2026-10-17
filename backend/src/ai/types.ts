@@ -17,19 +17,19 @@ export interface AIRequest {
   maxTokens: number;
   /**
    * Structured facts used ONLY by MockAIProvider to build a deterministic reply. Real providers
-   * must ignore it (it is never sent to Anthropic).
+   * must ignore it (it is never sent to Gemini).
    */
   mockContext?: unknown;
 }
 
 export interface AIResponse {
   text: string;
-  provider: 'anthropic' | 'mock';
+  provider: 'gemini' | 'mock';
   model: string;
 }
 
 export interface AIProvider {
-  readonly name: 'anthropic' | 'mock';
+  readonly name: 'gemini' | 'mock';
   readonly model: string;
   generate(req: AIRequest, signal?: AbortSignal): Promise<AIResponse>;
 }

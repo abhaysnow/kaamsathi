@@ -4,7 +4,7 @@ const grievanceSchema = new Schema(
   {
     ownerId: { type: String, required: true, maxlength: 80 },
     language: { type: String, required: true },
-    provider: { type: String, enum: ['anthropic', 'mock'], required: true },
+    provider: { type: String, enum: ['gemini', 'mock'], required: true },
     status: { type: String, enum: ['draft', 'sent_by_worker', 'resolved'], default: 'draft' },
     // Stored only after the worker gave explicit consent (enforced in the service layer).
     draft: { type: Schema.Types.Mixed, required: true },

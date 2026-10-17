@@ -5,14 +5,14 @@ import type { AIProvider } from '../../src/ai/types.js';
 import { demoAgent, entry, H, makeApp, userAgent } from '../helpers/app.js';
 
 const down: AIProvider = {
-  name: 'anthropic',
+  name: 'gemini',
   model: 'down',
   async generate() {
     throw new Error('ECONNRESET api-key-leak');
   },
 };
 const timeoutProv: AIProvider = {
-  name: 'anthropic',
+  name: 'gemini',
   model: 't',
   generate: (_r, signal) =>
     new Promise((_res, rej) => signal?.addEventListener('abort', () => rej(new Error('aborted')))),
@@ -132,11 +132,11 @@ describe('assistant', () => {
   });
   it('prompt injection: injected text cannot unlock links or flags', async () => {
     const evil: AIProvider = {
-      name: 'anthropic',
+      name: 'gemini',
       model: 'evil',
       async generate() {
         return {
-          provider: 'anthropic',
+          provider: 'gemini',
           model: 'evil',
           text: JSON.stringify({
             answer: 'Go to https://phish.example/claim now',

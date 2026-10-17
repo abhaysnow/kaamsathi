@@ -44,8 +44,8 @@ export function sessionMiddleware(config: AppConfig, store?: Store): RequestHand
     resave: false,
     saveUninitialized: false,
     rolling: false,
-    // Production trusts one proxy hop (app.ts); otherwise defer to the app's trust-proxy setting.
-    proxy: config.isProduction ? true : undefined,
+    // Defer to the app's trust-proxy setting (TRUST_PROXY_HOPS, see app.ts).
+    proxy: undefined,
     cookie: {
       httpOnly: true,
       sameSite: 'lax',

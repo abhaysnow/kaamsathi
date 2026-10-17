@@ -21,8 +21,8 @@ const EnvSchema = z.object({
   PORT: z.coerce.number().int().min(1).max(65535).default(4000),
   FRONTEND_ORIGINS: z.string().default('http://localhost:3000'),
   MONGODB_URI: z.string().optional().default(''),
-  ANTHROPIC_API_KEY: z.string().optional().default(''),
-  ANTHROPIC_MODEL: z.string().default('claude-sonnet-5-5'),
+  GEMINI_API_KEY: z.string().optional().default(''),
+  GEMINI_MODEL: z.string().min(1).default('gemini-flash-latest'),
   AI_TIMEOUT_MS: int(1000, 60000, 20000),
   AI_MAX_OUTPUT_TOKENS: int(100, 4000, 900),
   SESSION_SECRET: z.string().optional().default(''),
@@ -46,6 +46,8 @@ const EnvSchema = z.object({
   /** "fast" lowers Argon2 cost for the test suite only; refused in production. */
   PASSWORD_HASH_PROFILE: z.enum(['standard', 'fast']).default('standard'),
   KNOWLEDGE_DIR: z.string().optional().default(''),
+  /** Reverse proxies in front of the API. Default: 1 in production, 0 otherwise. */
+  TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).optional(),
 });
 
 export interface AppConfig {
@@ -53,8 +55,8 @@ export interface AppConfig {
   port: number;
   frontendOrigins: string[];
   mongoUri: string;
-  anthropicApiKey: string;
-  anthropicModel: string;
+  geminiApiKey: string;
+  geminiModel: string;
   aiTimeoutMs: number;
   aiMaxOutputTokens: number;
   sessionSecret: string;
@@ -70,6 +72,7 @@ export interface AppConfig {
   rateLimits: { login: number; auth: number; register: number };
   passwordHashProfile: 'standard' | 'fast';
   knowledgeDir: string;
+  trustProxyHops: number;
   isProduction: boolean;
 }
 
@@ -107,8 +110,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     port: parsed.PORT,
     frontendOrigins: origins,
     mongoUri: parsed.MONGODB_URI,
-    anthropicApiKey: parsed.ANTHROPIC_API_KEY,
-    anthropicModel: parsed.ANTHROPIC_MODEL,
+    geminiApiKey: parsed.GEMINI_API_KEY,
+    geminiModel: parsed.GEMINI_MODEL,
     aiTimeoutMs: parsed.AI_TIMEOUT_MS,
     aiMaxOutputTokens: parsed.AI_MAX_OUTPUT_TOKENS,
     // Dev/test fallback: ephemeral secret, sessions reset on restart.
@@ -136,6 +139,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     },
     passwordHashProfile: parsed.PASSWORD_HASH_PROFILE,
     knowledgeDir: parsed.KNOWLEDGE_DIR,
+    trustProxyHops: parsed.TRUST_PROXY_HOPS ?? (isProduction ? 1 : 0),
     isProduction,
   };
 }

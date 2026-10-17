@@ -42,7 +42,7 @@ describe('grievance fact preservation', () => {
   });
   it('falls back to a plain template when the model keeps inventing facts', async () => {
     const liar: AIProvider = {
-      name: 'anthropic',
+      name: 'gemini',
       model: 'liar',
       async generate() {
         return {
@@ -51,7 +51,7 @@ describe('grievance fact preservation', () => {
             finalMessage: 'They owe ₹250 on 2026-10-10, and also ₹7777 and called me on 9876543210',
             evidenceChecklist: [],
           }),
-          provider: 'anthropic',
+          provider: 'gemini',
           model: 'liar',
         };
       },

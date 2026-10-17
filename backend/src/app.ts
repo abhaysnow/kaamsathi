@@ -12,7 +12,9 @@ import { buildRouter } from './routes/index.js';
 export function createApp(ctx: AppContext): Express {
   const app = express();
   app.disable('x-powered-by');
-  if (ctx.config.isProduction) app.set('trust proxy', 1);
+  // Number of reverse proxies in front of the API (Vercel edge = 1; behind the frontend's proxy = 2).
+  // Needed so rate limits see each user's IP and Secure cookies see HTTPS.
+  if (ctx.config.trustProxyHops > 0) app.set('trust proxy', ctx.config.trustProxyHops);
 
   app.use(helmet());
   app.use(

@@ -52,10 +52,21 @@ export const DEMO_QUESTIONS = [
   'How can I raise a complaint against a platform?',
 ];
 
-/** Idempotent: seeds only when the demo owner has no entries yet. */
-export async function ensureDemoSeed(ctx: AppContext, ownerId: string): Promise<void> {
-  if (!ownerId.startsWith('demo:')) return;
-  const existing = await ctx.repos.earnings.list(ownerId);
-  if (existing.length > 0) return;
-  for (const e of demoEntries()) await ctx.repos.earnings.create(ownerId, e, 'demo_sample');
+const inFlight = new Map<string, Promise<void>>();
+
+/**
+ * Seeds a demo sandbox once. Called during demo login (before the response, so no later request
+ * can race it, even on another serverless instance) and lazily as a fallback. Concurrent calls in
+ * one process share a single seeding run instead of each seeing "empty" and seeding again.
+ */
+export function ensureDemoSeed(ctx: AppContext, ownerId: string): Promise<void> {
+  if (!ownerId.startsWith('demo:')) return Promise.resolve();
+  const running = inFlight.get(ownerId);
+  if (running) return running;
+  const run = (async () => {
+    if ((await ctx.repos.earnings.list(ownerId)).length > 0) return;
+    for (const e of demoEntries()) await ctx.repos.earnings.create(ownerId, e, 'demo_sample');
+  })().finally(() => inFlight.delete(ownerId));
+  inFlight.set(ownerId, run);
+  return run;
 }

@@ -23,6 +23,7 @@ polite, factual complaints.
 - [API reference](#api-reference)
 - [Testing](#testing)
 - [Deployment](#deployment)
+- [Deploying to Vercel](#deploying-to-vercel)
 - [Known limitations](#known-limitations)
 - [Hackathon pitch](#hackathon-pitch)
 
@@ -43,14 +44,15 @@ npm run dev:frontend     # http://localhost:3000  (terminal 2)
 
 With no configuration the app runs in a fully demonstrable mode:
 
-| What    | Without config                                                                           | With config                            |
-| ------- | ---------------------------------------------------------------------------------------- | -------------------------------------- |
-| AI      | **Mock provider** — deterministic, labelled "Demo AI (not a live model)" on every answer | Anthropic Claude (`ANTHROPIC_API_KEY`) |
-| Storage | In-memory (lost on restart; the server logs a warning)                                   | MongoDB (`MONGODB_URI`)                |
+| What    | Without config                                                                           | With config                      |
+| ------- | ---------------------------------------------------------------------------------------- | -------------------------------- |
+| AI      | **Mock provider** — deterministic, labelled "Demo AI (not a live model)" on every answer | Google Gemini (`GEMINI_API_KEY`) |
+| Storage | In-memory (lost on restart; the server logs a warning)                                   | MongoDB (`MONGODB_URI`)          |
 
 `GET /api/v1/health` always reports which AI provider and storage are active.
 
-To use real Claude, put `ANTHROPIC_API_KEY=...` in `backend/.env` and restart the backend. The key is read
+To use real Gemini, put `GEMINI_API_KEY=...` (from https://aistudio.google.com/apikey) in `backend/.env` and
+restart the backend. The key is read
 only on the server and never reaches the browser.
 
 Open http://localhost:3000. You land on the login page with the demo account already filled in; press
@@ -172,7 +174,7 @@ frontend/  Next.js 16 (App Router) · React 19 · TypeScript strict · Tailwind 
   tests/unit      Vitest
   tests/e2e       Playwright (starts real backend + frontend)
 
-backend/   Express 5 · TypeScript strict · Zod · Mongoose · Anthropic SDK · pino
+backend/   Express 5 · TypeScript strict · Zod · Mongoose · Google Gen AI SDK (`@google/genai`) · pino
   src/
     app.ts            helmet, CORS allow-list, 32 KB body limit, rate limits, session, CSRF guard
     config/env.ts     validated environment; production safety checks
@@ -182,7 +184,7 @@ backend/   Express 5 · TypeScript strict · Zod · Mongoose · Anthropic SDK ·
     schemas/          Zod request schemas (strict: unknown fields rejected)
     services/         workerAssistant, earningsService, schemeGuidance, documentAssistant,
                       grievanceDraft, emergency, citations, demoData
-    ai/               AIProvider interface · AnthropicProvider · MockAIProvider · prompts ·
+    ai/               AIProvider interface · GeminiProvider · MockAIProvider · prompts ·
                       structured (JSON + Zod validation, retry) · sanitize (prompt-injection defences)
     knowledge/        KnowledgeRetrievalService (keyword RAG) · schema · data/*.json (curated records)
     repositories/     memory + mongo implementations behind one owner-scoped interface
@@ -227,8 +229,8 @@ Backend (`backend/.env`, see `.env.example`):
 | `PORT`                                                         | `4000`                                 | API port                                                                              |
 | `FRONTEND_ORIGINS`                                             | `http://localhost:3000`                | Comma-separated CORS allow-list (`*` rejected in production)                          |
 | `MONGODB_URI`                                                  | empty → in-memory                      | MongoDB connection string (**required in production**)                                |
-| `ANTHROPIC_API_KEY`                                            | empty → mock AI                        | Claude API key (server-side only)                                                     |
-| `ANTHROPIC_MODEL`                                              | `claude-sonnet-5-5`                    | Claude model id                                                                       |
+| `GEMINI_API_KEY`                                               | empty → mock AI                        | Google Gemini API key (server-side only)                                              |
+| `GEMINI_MODEL`                                                 | `gemini-flash-latest`                  | Gemini model id or alias                                                              |
 | `AI_TIMEOUT_MS`                                                | `20000`                                | Per-request AI timeout                                                                |
 | `AI_MAX_OUTPUT_TOKENS`                                         | `900`                                  | Output token cap                                                                      |
 | `SESSION_SECRET`                                               | random per start                       | Session cookie signing secret, ≥32 chars (**required in production**)                 |
@@ -367,6 +369,46 @@ npm start -w frontend
 - Put the API behind a reverse proxy that sets `X-Forwarded-For` (the app trusts one proxy hop in production).
 - Read [SECURITY.md](SECURITY.md) before any public deployment.
 
+### Deploying to Vercel
+
+The app deploys as **two Vercel projects from this one repository**. The browser only ever talks to the
+frontend's domain: Next.js proxies `/api/v1/*` to the API project, so the session cookie is first-party
+(separate `*.vercel.app` domains would otherwise make it a blocked third-party cookie).
+
+**Prerequisite: a MongoDB database** (for example MongoDB Atlas, free tier). Serverless functions keep no
+memory between requests, so production requires `MONGODB_URI` for data _and_ sessions. In Atlas, allow
+access from Vercel (Network Access → `0.0.0.0/0`, or Vercel's static IPs on paid plans).
+
+**1. API project** — Vercel → _Add New Project_ → this repo → **Root Directory: `backend`**. Vercel reads
+`backend/vercel.json` (build `npm run build`, serverless entry `backend/api/index.js`). Environment variables:
+
+| Variable               | Value                                                                                            |
+| ---------------------- | ------------------------------------------------------------------------------------------------ |
+| `NODE_ENV`             | `production`                                                                                     |
+| `MONGODB_URI`          | your Atlas connection string                                                                     |
+| `SESSION_SECRET`       | 64 random hex chars (`node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`) |
+| `COOKIE_SECURE`        | `true`                                                                                           |
+| `FRONTEND_ORIGINS`     | the frontend URL, e.g. `https://kaamsaathi.vercel.app`                                           |
+| `TRUST_PROXY_HOPS`     | `2` (frontend proxy + Vercel edge, so rate limits see real client IPs)                           |
+| `DEMO_ACCOUNT_ENABLED` | `true` **only** if this deployment is a public demo for judges                                   |
+| `GEMINI_API_KEY`       | optional; without it the clearly labelled mock AI is used                                        |
+| `EMAIL_PROVIDER` etc.  | optional; without it password reset reports that email is not configured                         |
+
+**2. Frontend project** — _Add New Project_ → same repo → **Root Directory: `frontend`** (framework: Next.js).
+Environment variables:
+
+| Variable                   | Value                                                         |
+| -------------------------- | ------------------------------------------------------------- |
+| `BACKEND_URL`              | the API project URL, e.g. `https://kaamsaathi-api.vercel.app` |
+| `NEXT_PUBLIC_API_BASE_URL` | `/api/v1`                                                     |
+
+**3.** After the first deploy, set the API's `FRONTEND_ORIGINS` to the frontend's real URL and redeploy the
+API. Check `https://<frontend>/api/v1/health`: it should say `"storage":"mongo"`.
+
+Serverless caveats: rate limits are kept per function instance (weaker than a single server; use a shared
+store such as Upstash Redis for strict limits), and the first request after idle has a cold start while the
+database connection and demo seed are set up.
+
 ---
 
 ## Known limitations
@@ -381,8 +423,8 @@ npm start -w frontend
   state-specific record (BOCW welfare board); other states get central schemes plus general guidance.
 - **Mock AI is not an AI.** It assembles replies from the retrieved records and computed numbers, and does not
   translate source text. Record summaries are in English, so with the mock provider a Hindi answer contains
-  Hindi framing around English record text. Real Claude responses fully localise.
-- **Real Claude integration has not been exercised in this environment** (no API key was available). The
+  Hindi framing around English record text. Real Gemini responses fully localise.
+- **Real Gemini integration has not been exercised in this environment** (no API key was available). The
   provider is a thin wrapper over the official SDK and shares every validation path with the mock, but run a
   manual smoke test once a key is configured.
 - **UI translation** covers English, Hindi and Punjabi. Other languages show English labels, while AI answers and
@@ -409,7 +451,7 @@ net figure with the formula shown, explains rights and safety steps with officia
 _potentially_ relevant schemes along with the documents to collect, and drafts a polite, factual complaint
 the worker can edit and send themselves.
 
-**How AI is used — and where it is not.** Claude does the language work: understanding Romanised Hindi,
+**How AI is used — and where it is not.** Gemini does the language work: understanding Romanised Hindi,
 explaining in simple words, writing drafts in the chosen language. Code handles everything that must be
 right: arithmetic, eligibility filtering, citations, emergency detection, and checking that a complaint does
 not add facts the worker never gave. Every factual answer is grounded in a curated, source-linked knowledge
